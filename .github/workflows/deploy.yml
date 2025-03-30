@@ -14,11 +14,11 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Debug - List files
-        run: ls -la
+      - name: Debug - Current directory
+        run: pwd
       
-      - name: Debug - List solution files
-        run: find . -name "*.sln" -o -name "*.csproj"
+      - name: Debug - List all files
+        run: find . -type f -not -path "*/\.*" | sort
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
@@ -26,16 +26,13 @@ jobs:
           dotnet-version: '9.0.x'
           
       - name: Restore dependencies
-        # Explicitly point to the solution/project
-        run: dotnet restore $(find . -name "*.sln" | head -n 1)
+        run: dotnet restore BigCalculator.sln
         
       - name: Build
-        # Explicitly point to the solution/project
-        run: dotnet build $(find . -name "*.sln" | head -n 1) --configuration Release --no-restore
+        run: dotnet build BigCalculator.sln --configuration Release --no-restore
         
       - name: Publish
-        # Using the full path to the project file
-        run: dotnet publish $(find . -name "*.csproj" | grep -v "obj" | head -n 1) -c Release -o release --nologo
+        run: dotnet publish BigCalculatorApp/BigCalculatorApp.csproj -c Release -o release --nologo
       
       # Configure base path for GitHub Pages (repository name)
       - name: Change base-tag in index.html
