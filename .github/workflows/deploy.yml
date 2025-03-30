@@ -1,0 +1,44 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '9.0.x'
+          
+      - name: Restore dependencies
+        run: dotnet restore
+        
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+        
+      - name: Publish
+        run: dotnet publish BigCalculatorApp/BigCalculatorApp.csproj -c Release -o release --nologo
+      
+      # Configure base path for GitHub Pages (repository name)
+      - name: Change base-tag in index.html
+        run: |
+          repo_name="${GITHUB_REPOSITORY#*/}"
+          find release/wwwroot -name "index.html" -exec sed -i "s/<base href=\"\/\" \/>/<base href=\"\/$repo_name\/\" \/>/g" {} \;
+      
+      # Add .nojekyll file to tell GitHub Pages not to use Jekyll
+      - name: Add .nojekyll file
+        run: touch release/wwwroot/.nojekyll
+        
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: release/wwwroot
