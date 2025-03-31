@@ -1,9 +1,9 @@
 {
   "mainAssemblyName": "BigCalculatorApp",
   "resources": {
-    "hash": "sha256-ff3LI3lvteR2IrWDpMr18VTZSjVU2DNW2nv0YsyAAQk=",
+    "hash": "sha256-9wJkJBwIHxvFzX/ZJ98cwUKGSDvyga2n+GpEAIAyGbo=",
     "fingerprinting": {
-      "BigCalculatorApp.ihbqfkgtqf.wasm": "BigCalculatorApp.wasm",
+      "BigCalculatorApp.31hx8cjo1e.wasm": "BigCalculatorApp.wasm",
       "Microsoft.AspNetCore.Components.1ch918594k.wasm": "Microsoft.AspNetCore.Components.wasm",
       "Microsoft.AspNetCore.Components.Web.horg9ede60.wasm": "Microsoft.AspNetCore.Components.Web.wasm",
       "Microsoft.AspNetCore.Components.WebAssembly.qyco4g5bmd.wasm": "Microsoft.AspNetCore.Components.WebAssembly.wasm",
@@ -64,7 +64,7 @@
       "System.Runtime.InteropServices.JavaScript.0tgicm7vjk.wasm": "sha256-bAbPaONHne7R1hItHoY8/SYWlDb84JZQ1cxd1Y+tJn0="
     },
     "assembly": {
-      "BigCalculatorApp.ihbqfkgtqf.wasm": "sha256-pjuMIupmuj1u+R9ZoW1OEjNwIRr83JI/1LfRiV+4HLA=",
+      "BigCalculatorApp.31hx8cjo1e.wasm": "sha256-iUPut7SOyL7yqXWT6jzzq1YWwAhWE5ZzNmuRLRYkac0=",
       "Microsoft.AspNetCore.Components.1ch918594k.wasm": "sha256-/+4qPE13F7H+3S5dkE6JtPMfrVBsISaepeEUhhKotGo=",
       "Microsoft.AspNetCore.Components.Web.horg9ede60.wasm": "sha256-IeFoTML5Y+08HUO7Y/EzCm+FA6ElP6xk2BCusOjNF9Y=",
       "Microsoft.AspNetCore.Components.WebAssembly.qyco4g5bmd.wasm": "sha256-oitky6v+cC5sMmEkKurORgAL8h6q3jcJRkF7eYw2ubk=",
