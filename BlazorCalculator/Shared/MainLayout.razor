@@ -1,0 +1,79 @@
+﻿@inherits LayoutComponentBase
+
+<MudThemeProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+        <MudThemeProvider @bind-IsDarkMode="@_isDarkMode" Theme="MyCustomTheme" @ref="@_mudThemeProvider" />
+
+
+
+
+@* "#253759" "#466273" "#b0babf" "#c0d9d9" "#b78c38" *@
+
+<MudLayout>
+    <MudAppBar>
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+         <MudSpacer />
+        <MudToggleIconButton @bind-Toggled="@_isDarkMode"
+                     Icon="@Icons.Material.Filled.DarkMode" Color="@Color.Primary" Title="Switch to Dark Mode"
+                     ToggledIcon="@Icons.Material.Filled.LightMode" ToggledColor="@Color.Primary" ToggledTitle="Switch to Light Mode"/>
+@*        <MudMenu EndIcon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" PositionAtCurser="true" >
+            <MudMenuItem >Login</MudMenuItem>
+            <MudMenuItem>My account</MudMenuItem>
+            <MudMenuItem >Logout</MudMenuItem>
+        </MudMenu>*@
+        
+    </MudAppBar>
+    <MudDrawer @bind-Open="@_drawerOpen">
+        <MudNavMenu>
+            <MudNavLink Href="/" Icon="@Icons.Material.Filled.Calculate" Match="NavLinkMatch.All">Big Float Calculator</MudNavLink>
+ @*           <MudNavLink Href="/servers" Match="NavLinkMatch.Prefix">More</MudNavLink>
+            <MudNavGroup Title="Settings" Expanded="true">
+                <MudNavLink Href="/users"  Match="NavLinkMatch.Prefix">Users</MudNavLink>
+                <MudNavLink Href="/security"  Match="NavLinkMatch.Prefix">Security</MudNavLink>
+            </MudNavGroup>*@
+            <MudNavLink Href="/about" Icon="@Icons.Material.Filled.CoffeeMaker" Match="NavLinkMatch.Prefix">About</MudNavLink>
+        </MudNavMenu>
+    </MudDrawer>
+    
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.Medium">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+
+</MudLayout>
+
+
+@code {
+    // This section is for the left side menu
+    bool _drawerOpen = true;
+    void DrawerToggle() { _drawerOpen = !_drawerOpen; }
+
+
+    // This section is to custimize the MudTheme.
+    // see: https://mudblazor.com/customization/overview#system-preference 
+    MudTheme MyCustomTheme = new MudTheme();
+    private bool _isDarkMode;
+    private MudThemeProvider? _mudThemeProvider;    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            if (_mudThemeProvider != null)
+            {
+                _isDarkMode = await _mudThemeProvider.GetSystemPreference();
+                StateHasChanged();
+            }
+        }
+    }
+    protected override void OnParametersSet ()
+    {
+        MyCustomTheme.PaletteDark.Primary = "#b78c38";
+        MyCustomTheme.PaletteDark.Secondary = Colors.Green.Accent4;
+        MyCustomTheme.PaletteDark.AppbarBackground = Colors.Red.Default;
+    }
+
+    
+}

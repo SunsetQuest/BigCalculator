@@ -1,0 +1,247 @@
+﻿@page "/"
+@using System.Numerics;
+@using System.Text.RegularExpressions
+@using BigFloatLibrary;
+
+<PageTitle>Big Number Calculator</PageTitle>
+
+<MudPaper Class="pa-16 ma-2" Elevation="3" >
+    <MudStack Spacing="2">
+        <MudPaper Elevation="1" Class="d-flex align-center justify-center ma-4">
+            <MudTextField 
+                Lines="5"
+                OnDebounceIntervalElapsed="CalculateAsync"
+                DebounceInterval="500" 
+                Error="@inputAInvalidFormat"
+                @bind-Value="@inputAString"
+                HelperText="@($"RawMantissa:{inputA.RawMantissa} Size:{inputA.Size}  Scale:{inputA.Scale} BinExp:{inputA.BinaryExponent}")"
+                Label="Input A" 
+                Variant="Variant.Outlined" 
+                Adornment="Adornment.End" AdornmentIcon="@PasswordInputIcon" OnAdornmentClick="ButtonTestclick" AdornmentAriaLabel="Show Password"                
+            >
+            </MudTextField>
+        </MudPaper>
+        <MudPaper Width="25%">
+            <MudSlider TickMarks="true"
+                       TickMarkLabels="@Bases"
+                       Max="@(Bases.Length - 1)"
+                       @bind-Value="@inputAType"
+                       @onclick="@CalculateAsync2" />
+        </MudPaper>
+        </MudStack>
+
+        <MudPaper Elevation="1" Class="d-flex align-center justify-center ma-4">
+            <MudTextField 
+                Lines="5"
+                OnDebounceIntervalElapsed="CalculateAsync"
+                DebounceInterval="500" 
+                Error="@inputBInvalidFormat"
+                @bind-Value="@inputBString"
+                HelperText="@($"RawMantissa:{inputB.RawMantissa} Size:{inputB.Size}  Scale:{inputB.Scale} Exp:{inputB.BinaryExponent}")"
+                Label="Input B" 
+                Variant="Variant.Outlined" >
+            </MudTextField>
+        </MudPaper>
+
+        <MudPaper title="Result" Elevation="1" Class="d-flex align-center justify-center ma-4">
+            <MudTextField 
+                Lines="5"
+                @bind-Value="@resultString"
+                HelperText="@($"RawMantissa:{inputB.RawMantissa} Size:{inputB.Size}  Scale:{inputB.Scale} Exp:{inputB.BinaryExponent}")"
+                Label="Result" 
+                Variant="Variant.Filled"
+                ReadOnly>
+            </MudTextField>            
+        </MudPaper>
+        
+        
+
+<MudButton Disabled="@_processing" OnClick="@((e) => {SetOperation(Operation.Add);})" Variant="Variant.Filled" Color="@(selectedOperation==Operation.Add?Color.Primary:Color.Default)">  
+    @if (_processing) { <MudIcon Icon="@Icons.Material.Filled.Refresh"/>}  
+    else { <MudText Typo="Typo.button">+</MudText>  }  
+</MudButton>  
+<MudButton Disabled="@_processing" OnClick="@((e) => {SetOperation(Operation.Subtract);})" Variant="Variant.Filled" Color="@(selectedOperation==Operation.Subtract?Color.Primary:Color.Default)">  
+    @if (_processing) { <MudIcon Icon="@Icons.Material.Filled.Refresh"/>}  
+    else { <MudText Typo="Typo.button">-</MudText>  }  
+</MudButton>  
+<MudButton Disabled="@_processing" OnClick="@((e) => {SetOperation(Operation.Multiply);})" Variant="Variant.Filled" Color="@(selectedOperation==Operation.Multiply?Color.Primary:Color.Default)">  
+    @if (_processing) { <MudIcon Icon="@Icons.Material.Filled.Refresh"/>}  
+    else { <MudText Typo="Typo.button">X</MudText>  }  
+</MudButton>  
+<MudButton Disabled="@_processing" OnClick="@((e) => {SetOperation(Operation.Divide);})" Variant="Variant.Filled" Color="@(selectedOperation==Operation.Divide?Color.Primary:Color.Default)">  
+    @if (_processing) { <MudIcon Icon="@Icons.Material.Filled.Refresh"/>}  
+    else { <MudText Typo="Typo.button">/</MudText>  }  
+</MudButton>  
+<MudButton Disabled="@_processing" OnClick="@((e) => {SetOperation(Operation.ShiftRight);})" Variant="Variant.Filled" Color="@(selectedOperation==Operation.ShiftRight?Color.Primary:Color.Default)">  
+    @if (_processing) { <MudIcon Icon="@Icons.Material.Filled.Refresh"/>}  
+    else { <MudText Typo="Typo.button">&#62;&#62;</MudText>  }  
+</MudButton>  
+<MudButton Disabled="@_processing" OnClick="@((e) => {SetOperation(Operation.ShiftLeft);})" Variant="Variant.Filled"  Color="@(selectedOperation==Operation.ShiftLeft?Color.Primary:Color.Default)">  
+    @if (_processing) { <MudIcon Icon="@Icons.Material.Filled.Refresh"/>}  
+    else { <MudText Typo="Typo.button">&#60;&#60;</MudText>  }  
+</MudButton>  
+
+</MudPaper>
+
+<MudPaper Class="pa-16 ma-2" Elevation="3">
+    <MudStack Reverse="true">
+        @foreach(var resultHistory in resultHistories)
+        {
+            <MudPaper Class="pa-3">@resultHistory</MudPaper>
+        }
+    </MudStack>
+</MudPaper>
+
+
+@code {
+    private bool _processing = false;
+
+    Queue<string> resultHistories = new Queue<string>();
+
+    int inputAType = (int)Base.Dec;
+
+    enum Base
+    {
+        Bin,
+        Dec,
+        Hex,
+        Oct
+    }
+    string[] Bases = Enum.GetNames(typeof(Base));
+
+    enum Operation
+    {
+        Add,
+        Subtract,
+        Multiply,
+        Divide,
+        ShiftLeft,
+        ShiftRight,
+    }
+    Operation selectedOperation = Operation.Add;
+
+    // public IMask binDecNumOnly1 = new RegexMask(@"^(-)?([0-9]*\.?[0-9]*)$"); // Mask="@binDecNumOnly1"
+
+    //                OnDebounceIntervalElapsed="Calculate"
+    //                DebounceInterval="300" 
+    private string inputAString = "111";
+    private bool inputAInvalidFormat = false;
+
+    private string inputBString = "111";
+    private bool inputBInvalidFormat = false;
+
+    private string resultString = "111";
+
+    BigFloat inputA = 7;
+    BigFloat inputB = 7;
+    BigFloat result = 7;
+
+    async void SetOperation(Operation operation)
+    {
+        _processing = true;
+
+        selectedOperation = operation;
+        await CalculateAsync("");
+    }
+
+    private async Task CalculateAsync2()
+    {
+        await CalculateAsync("");
+    }
+    private async Task CalculateAsync(string debouncedText) //ChangeEventArgs args
+    {
+        _processing = true;
+        StateHasChanged();//        InvokeAsync(() =>StateHasChanged());
+
+        //Calculate();
+        //InvokeAsync(() => Calculate());
+        //Task.Run(() => Calculate());
+        //InvokeAsync(() =>  Calculate());
+        //Timer timer = new Timer(TimeCallBack, null, 100, 100);  
+        Task.Delay(100).ContinueWith(t => Calculate());
+    }
+
+    //void TimeCallBack(object? state)  
+    //{
+        
+    //    Calculate();
+    //    InvokeAsync(StateHasChanged);  
+    //}  
+
+    public async Task Execute(Action action, int timeoutInMilliseconds)
+    {
+        await Task.Delay(timeoutInMilliseconds);
+        action();
+    }
+
+    private void Calculate()
+    {
+        if (inputAType == (int)Base.Bin)
+        {
+            inputAInvalidFormat = !BigFloat.TryParseBinary(inputAString, out inputA);
+        }
+        else if (inputAType == (int)Base.Dec)
+        {
+            inputAInvalidFormat = !BigFloat.TryParseDecimal(inputAString, out inputA);
+        }
+        else if (inputAType == (int)Base.Hex)
+        {
+            inputAInvalidFormat = !BigFloat.TryParseHex(inputAString, out inputA);
+        }
+
+        inputBInvalidFormat = !BigFloat.TryParse(inputBString, out inputB);
+        Thread.SpinWait(2000000);
+        //result = (Math.Max(inputA,inputB)+1)/2;
+        if (inputAInvalidFormat || inputBInvalidFormat)
+        {
+            resultString = "";
+            return;
+        }
+
+        result = selectedOperation switch
+        {
+            Operation.Add => inputA + inputB,
+            Operation.Subtract => inputA - inputB,
+            Operation.Multiply => inputA * inputB,
+            Operation.Divide => inputA / inputB,
+            Operation.ShiftRight => int.TryParse(inputBString, out int inputBAsInt) ? inputA >> inputBAsInt : 0,
+            Operation.ShiftLeft => int.TryParse(inputBString, out int inputBAsInt) ? inputA << inputBAsInt : 0,
+            _ => throw new ArgumentOutOfRangeException(nameof(selectedOperation), $"Unexpected math operation: {selectedOperation}"),
+        };
+
+        resultString = result.ToString();
+        resultHistories.Enqueue(resultString);
+
+        if (resultHistories.Count > 10)
+        {
+            resultHistories.Dequeue();
+        }
+        
+        _processing = false;
+        StateHasChanged();
+    }
+    
+    public enum NumberBase
+    {
+        Binary,
+        Dec
+    }
+
+    string PasswordInputIcon = Icons.Material.Filled.Numbers;
+
+    void ButtonTestclick()
+    {
+        if (PasswordInputIcon == Icons.Material.Filled.Numbers)
+        {
+            PasswordInputIcon = Icons.Material.Filled.LooksOne;
+        }
+        else if (PasswordInputIcon == Icons.Material.Filled.LooksOne)
+        {
+            PasswordInputIcon = Icons.Material.Filled.Hexagon;
+        }
+        else if (PasswordInputIcon == Icons.Material.Filled.Hexagon)
+        {
+            PasswordInputIcon = Icons.Material.Filled.Numbers;
+        }
+    }
+}
