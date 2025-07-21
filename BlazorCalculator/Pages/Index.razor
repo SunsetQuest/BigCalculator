@@ -17,7 +17,7 @@
                 HelperText="@($"RawMantissa:{inputA.RawMantissa} Size:{inputA.Size}  Scale:{inputA.Scale} BinExp:{inputA.BinaryExponent}")"
                 Label="Input A" 
                 Variant="Variant.Outlined" 
-                Adornment="Adornment.End" AdornmentIcon="@PasswordInputIcon" OnAdornmentClick="ButtonTestclick" AdornmentAriaLabel="Show Password"                
+                Adornment="Adornment.End" AdornmentIcon="@inputATypeIcon" OnAdornmentClick="InputABaseSelectClick" AdornmentAriaLabel="Select Base"                
             >
             </MudTextField>
         </MudPaper>
@@ -39,7 +39,9 @@
                 @bind-Value="@inputBString"
                 HelperText="@($"RawMantissa:{inputB.RawMantissa} Size:{inputB.Size}  Scale:{inputB.Scale} Exp:{inputB.BinaryExponent}")"
                 Label="Input B" 
-                Variant="Variant.Outlined" >
+                Variant="Variant.Outlined"
+                Adornment="Adornment.End" AdornmentIcon="@inputBTypeIcon" OnAdornmentClick="InputBBaseSelectClick" AdornmentAriaLabel="Select Base"
+            >
             </MudTextField>
         </MudPaper>
 
@@ -50,7 +52,9 @@
                 HelperText="@($"RawMantissa:{inputB.RawMantissa} Size:{inputB.Size}  Scale:{inputB.Scale} Exp:{inputB.BinaryExponent}")"
                 Label="Result" 
                 Variant="Variant.Filled"
-                ReadOnly>
+                Adornment="Adornment.End" AdornmentIcon="@resultTypeIcon" OnAdornmentClick="ResultBaseSelectClick" AdornmentAriaLabel="Select Base"
+                ReadOnly
+            >
             </MudTextField>            
         </MudPaper>
         
@@ -99,6 +103,8 @@
     Queue<string> resultHistories = new Queue<string>();
 
     int inputAType = (int)Base.Dec;
+    int inputBType = (int)Base.Dec;
+    int resultType = (int)Base.Dec;
 
     enum Base
     {
@@ -163,7 +169,7 @@
 
     //void TimeCallBack(object? state)  
     //{
-        
+
     //    Calculate();
     //    InvokeAsync(StateHasChanged);  
     //}  
@@ -189,9 +195,21 @@
             inputAInvalidFormat = !BigFloat.TryParseHex(inputAString, out inputA);
         }
 
-        inputBInvalidFormat = !BigFloat.TryParse(inputBString, out inputB);
+        if (inputBType == (int)Base.Bin)
+        {
+            inputBInvalidFormat = !BigFloat.TryParseBinary(inputBString, out inputB);
+        }
+        else if (inputBType == (int)Base.Dec)
+        {
+            inputBInvalidFormat = !BigFloat.TryParseDecimal(inputBString, out inputB);
+        }
+        else if (inputBType == (int)Base.Hex)
+        {
+            inputBInvalidFormat = !BigFloat.TryParseHex(inputBString, out inputB);
+        }
+
         Thread.SpinWait(2000000);
-        //result = (Math.Max(inputA,inputB)+1)/2;
+        
         if (inputAInvalidFormat || inputBInvalidFormat)
         {
             resultString = "";
@@ -209,39 +227,111 @@
             _ => throw new ArgumentOutOfRangeException(nameof(selectedOperation), $"Unexpected math operation: {selectedOperation}"),
         };
 
-        resultString = result.ToString();
+        if (resultType == (int)Base.Bin)
+        {
+            resultString = result.ToBinaryString();
+        }
+        else if (resultType == (int)Base.Dec)
+        {
+            resultString = result.ToString();
+        }
+        else if (resultType == (int)Base.Hex)
+        {
+            resultString = result.ToHexString();
+        }
+
         resultHistories.Enqueue(resultString);
 
         if (resultHistories.Count > 10)
         {
             resultHistories.Dequeue();
         }
-        
+
         _processing = false;
         StateHasChanged();
     }
-    
-    public enum NumberBase
+
+    const string HexIcon = """"
+<svg width="24" height="24" viewBox="0 0 24 24" >
+  <circle cx="12" cy="12" r="11" fill="#fdf2f2" stroke="#e74c3c" stroke-width="1.5"/>
+  <text x="12" y="9" font-family="monospace" font-size="8" font-weight="bold" fill="#c0392b" text-anchor="middle">0x</text>
+  <text x="12" y="18" font-family="monospace" font-size="7" font-weight="bold" fill="#e74c3c" text-anchor="middle">FF</text>
+</svg>
+"""";
+
+    const string BinIcon = """"
+<svg width="24" height="24" viewBox="0 0 24 24" >
+  <circle cx="12" cy="12" r="11" fill="#f0f8ff" stroke="#3498db" stroke-width="1.5"/>
+  <text x="12" y="10" font-family="monospace" font-size="7" font-weight="bold" fill="#2980b9" text-anchor="middle">101</text>
+  <text x="12" y="18" font-family="monospace" font-size="7" font-weight="bold" fill="#3498db" text-anchor="middle">011</text>
+</svg>
+"""";
+
+    const string DecIcon = """"
+<svg width="24" height="24" viewBox="0 0 24 24" >
+  <circle cx="12" cy="12" r="11" fill="#f0fff4" stroke="#27ae60" stroke-width="1.5"/>
+  <text x="12" y="16" font-family="monospace" font-size="10" font-weight="bold" fill="#229954" text-anchor="middle">123</text>
+</svg>
+"""";
+
+    string inputATypeIcon = DecIcon;
+    string inputBTypeIcon = DecIcon;
+    string resultTypeIcon = DecIcon;
+
+    void InputABaseSelectClick()
     {
-        Binary,
-        Dec
+        if (inputAType == (int)Base.Bin)
+        {
+            inputATypeIcon = DecIcon;
+            inputAType = (int)Base.Dec;
+        }
+        else if (inputAType == (int)Base.Dec)
+        {
+            inputATypeIcon = HexIcon;
+            inputAType = (int)Base.Hex;
+        }
+        else //if (inputAType == (int)Base.Hex)
+        {
+            inputATypeIcon = BinIcon;
+            inputAType = (int)Base.Bin;
+        }
     }
 
-    string PasswordInputIcon = Icons.Material.Filled.Numbers;
-
-    void ButtonTestclick()
+    void InputBBaseSelectClick()
     {
-        if (PasswordInputIcon == Icons.Material.Filled.Numbers)
+        if (inputBType == (int)Base.Bin)
         {
-            PasswordInputIcon = Icons.Material.Filled.LooksOne;
+            inputBTypeIcon = DecIcon;
+            inputBType = (int)Base.Dec;
         }
-        else if (PasswordInputIcon == Icons.Material.Filled.LooksOne)
+        else if (inputBType == (int)Base.Dec)
         {
-            PasswordInputIcon = Icons.Material.Filled.Hexagon;
+            inputBTypeIcon = HexIcon;
+            inputBType = (int)Base.Hex;
         }
-        else if (PasswordInputIcon == Icons.Material.Filled.Hexagon)
+        else //if (inputBType == (int)Base.Hex)
         {
-            PasswordInputIcon = Icons.Material.Filled.Numbers;
+            inputBTypeIcon = BinIcon;
+            inputBType = (int)Base.Bin;
+        }
+    }
+
+    void ResultBaseSelectClick()
+    {
+        if (resultType == (int)Base.Bin)
+        {
+            resultTypeIcon = DecIcon;
+            resultType = (int)Base.Dec;
+        }
+        else if (resultType == (int)Base.Dec)
+        {
+            resultTypeIcon = HexIcon;
+            resultType = (int)Base.Hex;
+        }
+        else //if (resultType == (int)Base.Hex)
+        {
+            resultTypeIcon = BinIcon;
+            resultType = (int)Base.Bin;
         }
     }
 }
