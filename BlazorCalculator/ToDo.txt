@@ -1,0 +1,2 @@
+Rename \BlazorCalculator\BlazorCalculator\Shared to \BlazorCalculator\BlazorCalculator\Layout (and one other spot in code)
+Rename BlazorCalculator to BigNumberCalculator 

@@ -24,32 +24,30 @@
     <div>
         <h5>Input A</h5>
         <div>
-            <input type="text" class="w-100 " style="text-align: right;" 
-            @bind-value="@inputAString" 
-            @onkeydown="@(e => {VerifyValidKey(e);})" 
-            @onkeydown:preventDefault="preventDefault" 
-            @onkeyup="@(e => {KeyUpHandlerA(e); Calculate();})" 
-            @bind-value:event="oninput"
-            />
-            <br />Dec:@inputA Bits:@(BitOperations.Log2((uint)inputA)+1)
+            <input type="text" class="w-100 " style="text-align: right;"
+                   @bind-value="@inputAString"
+                   @onkeydown="@(e => { VerifyValidKey(e); })"
+                   @onkeydown:preventDefault="preventDefault"
+                   @onkeyup="@(e => { KeyUpHandlerA(e); Calculate(); })"
+                   @bind-value:event="oninput" />
+            <br />Dec:@inputA Bits:@(BitOperations.Log2((uint)inputA) + 1)
         </div>
-        
+
         <h5>Input B</h5>
         <div>
-            <input type="text" class="w-100 " style="text-align: right;" 
-            @bind-value="@inputBString" 
-            @onkeydown="@(e => {VerifyValidKey(e);})" 
-            @onkeydown:preventDefault="preventDefault" 
-            @onkeyup="@(e => {KeyUpHandlerB(e); Calculate();})" 
-            @bind-value:event="oninput"
-            />
+            <input type="text" class="w-100 " style="text-align: right;"
+                   @bind-value="@inputBString"
+                   @onkeydown="@(e => { VerifyValidKey(e); })"
+                   @onkeydown:preventDefault="preventDefault"
+                   @onkeyup="@(e => { KeyUpHandlerB(e); Calculate(); })"
+                   @bind-value:event="oninput" />
             <br />RawMantissa:@inputB.RawMantissa Size:@inputB.Size  Scale:@inputB.Scale BinExp:@inputB.BinaryExponent
         </div>
-                
+
         <h5>Result</h5>
         <div>
-            <input type="text" class="w-100" style="text-align: right;" value="@resultString" @oninput="@(e => {resultString = Regex.Replace((e.Value ?? "").ToString() ?? "" , @"[^01]", ""); Calculate();})" />
-            <br />Dec:@result Bits:@(BitOperations.Log2((uint)result)+1)
+            <input type="text" class="w-100" style="text-align: right;" value="@resultString" @oninput="@(e => { resultString = Regex.Replace((e.Value ?? "").ToString() ?? "", @"[^01]", ""); Calculate(); })" />
+            <br />Dec:@result Bits:@(BitOperations.Log2((uint)result) + 1)
         </div>
     </div>
 </div>
@@ -61,8 +59,8 @@
 
 @code {
 
-    private string inputAString = "111"; 
-    private string inputAValid = "111"; 
+    private string inputAString = "111";
+    private string inputAValid = "111";
     private string inputBString = "111";
     private string inputBValid = "111";
     private string resultString = "111";
@@ -77,7 +75,7 @@
 
     private void Calculate()//ChangeEventArgs args
     {
-        
+
         //result = (Math.Max(inputA,inputB)+1)/2;
 
         var result = inputA + inputB;
@@ -88,7 +86,7 @@
     private void VerifyValidKey(KeyboardEventArgs e)
     {
         // Lets first check to see if the e.Key is valid.
-        bool validKey = "01.-".Contains(e.Key) 
+        bool validKey = "01.-".Contains(e.Key)
             || e.Key == "Backspace" || e.Key == "Delete"
             || e.Key == "ArrowLeft" || e.Key == "ArrowRight"
             || e.Key == "ArrowUp" || e.Key == "ArrowDown"

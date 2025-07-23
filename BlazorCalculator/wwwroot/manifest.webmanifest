@@ -1,6 +1,7 @@
 {
   "name": "BlazorCalculator",
   "short_name": "BlazorCalculator",
+  "id": "./",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#ffffff",
