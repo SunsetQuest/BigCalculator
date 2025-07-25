@@ -1,6 +1,6 @@
 {
-  "name": "BlazorCalculator",
-  "short_name": "BlazorCalculator",
+  "name": "BigCalculator",
+  "short_name": "BigCalculator",
   "id": "./",
   "start_url": "./",
   "display": "standalone",
