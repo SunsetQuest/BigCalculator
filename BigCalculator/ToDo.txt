@@ -1,2 +1,0 @@
-Rename \BigCalculator\BigCalculator\Shared to \BigCalculator\BigCalculator\Layout (and one other spot in code)
-Rename BigCalculator to BigNumberCalculator 
