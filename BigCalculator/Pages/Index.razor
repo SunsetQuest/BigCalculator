@@ -132,60 +132,38 @@
     </MudPaper>
 </MudPaper>
 
-
-<!-- Enhanced History Section -->
+<!-- Enhanced History Section with Transfer Buttons -->
 <MudPaper Class="pa-16 ma-2" Elevation="3">
-    <MudText Typo="Typo.h6" Class="mb-4">
-        <MudIcon Icon="@Icons.Material.Filled.History" Class="mr-2" />
-        Calculation History
-        @if (resultHistories.Any())
+    <MudText Typo="Typo.h6" Class="mb-4">Calculation History</MudText>
+    <MudStack Reverse="true" Spacing="2">
+        @foreach(var (result, index) in resultHistories.Select((r, i) => (r, i)))
         {
-            <MudChip T="int" Size="Size.Small" Color="Color.Info" Class="ml-2">@resultHistories.Count</MudChip>
+            <MudPaper Class="pa-3 d-flex align-center justify-space-between" Elevation="1">
+                <MudText Class="flex-grow-1 font-monospace">@result</MudText>
+                <MudButtonGroup Variant="Variant.Outlined" Size="Size.Small">
+                    <MudButton StartIcon="@Icons.Material.Filled.Input" 
+                               Color="Color.Primary" 
+                               Size="Size.Small"
+                               OnClick="() => TransferToInputA(result)">
+                        → A
+                    </MudButton>
+                    <MudButton StartIcon="@Icons.Material.Filled.Input" 
+                               Color="Color.Secondary" 
+                               Size="Size.Small"
+                               OnClick="() => TransferToInputB(result)"
+                               Disabled="@(!NeedsB)">
+                        → B
+                    </MudButton>
+                    <MudButton StartIcon="@Icons.Material.Filled.Delete" 
+                               Color="Color.Error" 
+                               Size="Size.Small"
+                               OnClick="() => RemoveFromHistory(index)">
+                        ×
+                    </MudButton>
+                </MudButtonGroup>
+            </MudPaper>
         }
-    </MudText>
-    
-    <MudStack Reverse="false" Spacing="2">
-        @if (resultHistories.Any())
-        {
-            @foreach(var (result, index) in resultHistories.Select((r, i) => (r, i)))
-            {
-                <MudPaper Class="pa-3 d-flex align-center justify-space-between history-item" Elevation="1">
-                    <MudText Class="flex-grow-1 font-monospace" Typo="Typo.body2">@result</MudText>
-                    <MudButtonGroup Variant="Variant.Text" Size="Size.Small">
-                        <MudButton StartIcon="@Icons.Material.Filled.Input" 
-                                   Color="Color.Primary" 
-                                   Size="Size.Small"
-                                   OnClick="() => TransferToInputA(ExtractResultValue(result))"
-                                   Title="Move to Input A">
-                            → A
-                        </MudButton>
-                        <MudButton StartIcon="@Icons.Material.Filled.Input" 
-                                   Color="Color.Secondary" 
-                                   Size="Size.Small"
-                                   OnClick="() => TransferToInputB(ExtractResultValue(result))"
-                                   Disabled="@(!NeedsB)"
-                                   Title="Move to Input B">
-                            → B
-                        </MudButton>
-                        <MudButton StartIcon="@Icons.Material.Filled.Delete" 
-                                   Color="Color.Error" 
-                                   Size="Size.Small"
-                                   OnClick="() => RemoveFromHistory(index)"
-                                   Title="Remove from history">
-                            ×
-                        </MudButton>
-                    </MudButtonGroup>
-                </MudPaper>
-            }
-            <MudButton Variant="Variant.Text" 
-                       Color="Color.Error" 
-                       StartIcon="@Icons.Material.Filled.ClearAll"
-                       OnClick="ClearHistory"
-                       Class="mt-2">
-                Clear History
-            </MudButton>
-        }
-        else
+        @if (!resultHistories.Any())
         {
             <MudAlert Severity="Severity.Info" Class="ma-2">
                 <MudText>No calculations performed yet. Results will appear here.</MudText>
@@ -193,6 +171,42 @@
         }
     </MudStack>
 </MudPaper>
+
+@code {
+    // Convert Queue to List for better manipulation
+    List<string> resultHistories = new List<string>();
+
+    // UI Action Methods
+
+    private void TransferToInputA(string value)
+    {
+        // Todo: Lets transfer anything after the "=" in value to inputAString
+        inputAString = value;
+
+        _ = CalculateAsync("");
+        StateHasChanged();
+    }
+
+    private void TransferToInputB(string value)
+    {
+        if (NeedsB)
+        {
+            inputBString = value;
+            _ = CalculateAsync("");
+            StateHasChanged();
+        }
+    }
+
+    private void RemoveFromHistory(int index)
+    {
+        if (index >= 0 && index < resultHistories.Count)
+        {
+            resultHistories.RemoveAt(index);
+            StateHasChanged();
+        }
+    }
+}
+
 
 <style>
     .mud-input-large .mud-input-control {
@@ -221,7 +235,6 @@
     private string errorMessage = "";
     private bool hasCalculationError = false;
 
-    List<string> resultHistories = new List<string>();
 
     Base inputAType = Base.Dec;
     Base inputBType = Base.Dec;
@@ -380,6 +393,7 @@
             _processing = false;
             StateHasChanged();
         }
+
     }
 
     private BigFloat ValidateDivision(BigFloat a, BigFloat b)
@@ -504,30 +518,6 @@
         return resultPart;
     }
 
-    // UI Action Methods
-    private void TransferToInputA(string value)
-    {
-        inputAString = value;
-        _ = CalculateAsync("");
-    }
-
-    private void TransferToInputB(string value)
-    {
-        if (NeedsB)
-        {
-            inputBString = value;
-            _ = CalculateAsync("");
-        }
-    }
-
-    private void RemoveFromHistory(int index)
-    {
-        if (index >= 0 && index < resultHistories.Count)
-        {
-            resultHistories.RemoveAt(index);
-            StateHasChanged();
-        }
-    }
 
     private void ClearHistory()
     {
