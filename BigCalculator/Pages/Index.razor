@@ -5,103 +5,222 @@
 
 <PageTitle>Big Number Calculator</PageTitle>
 
+<!-- Error Display -->
+@if (hasCalculationError)
+{
+    <MudAlert Severity="Severity.Error" Class="ma-2" ShowCloseIcon="true" CloseIconClicked="() => { hasCalculationError = false; errorMessage = string.Empty; }">
+        @errorMessage
+    </MudAlert>
+}
+
 <MudPaper Class="pa-16 ma-2" Elevation="3">
     <!-- Input A -->
     <MudPaper Elevation="1" Class="d-flex align-center justify-center ma-4">
-        <MudTextField Lines="5"
+        <MudTextField Lines="3"
                       OnDebounceIntervalElapsed="CalculateAsync"
                       DebounceInterval="500"
                       Error="@inputAInvalidFormat"
+                      ErrorText="@(inputAInvalidFormat ? $"Invalid {inputAType} format" : "")"
                       @bind-Value="@inputAString"
-                      HelperText="@($"RawMantissa:{inputA.RawMantissa} Size:{inputA.Size}  Scale:{inputA.Scale} BinExp:{inputA.BinaryExponent}")"
+                      HelperText="@GetInputHelperText(inputA, inputAType)"
                       Label="Input A"
                       Variant="Variant.Outlined"
                       Adornment="Adornment.End"
                       AdornmentIcon="@inputATypeIcon"
                       OnAdornmentClick="InputABaseSelectClick"
-                      AdornmentAriaLabel="Select Base">
+                      AdornmentAriaLabel="Select Base"
+                      Class="mud-input-large">
         </MudTextField>
     </MudPaper>
+
     @if (NeedsB)
     {
         <!-- Input B -->
         <MudPaper Elevation="1" Class="d-flex align-center justify-center ma-4">
-        <MudTextField Lines="5"
-                      OnDebounceIntervalElapsed="CalculateAsync"
-                      DebounceInterval="500"
-                      Error="@inputBInvalidFormat"
-                      @bind-Value="@inputBString"
-                      HelperText="@($"Mantissa:{inputB.RoundedMantissa.ToBinaryString()} BinarySize:{inputB.Size} BinaryScale:{inputB.Scale} BinaryExp:{inputB.BinaryExponent}")"
-                      Label="Input B"
-                      Variant="Variant.Outlined"
-                      Adornment="Adornment.End"
-                      AdornmentIcon="@inputBTypeIcon"
-                      OnAdornmentClick="InputBBaseSelectClick"
-                      AdornmentAriaLabel="Select Base">
-        </MudTextField>
-    </MudPaper>
+            <MudTextField Lines="3"
+                          OnDebounceIntervalElapsed="CalculateAsync"
+                          DebounceInterval="500"
+                          Error="@inputBInvalidFormat"
+                          ErrorText="@(inputBInvalidFormat ? $"Invalid {inputBType} format" : "")"
+                          @bind-Value="@inputBString"
+                          HelperText="@GetInputHelperText(inputB, inputBType)"
+                          Label="Input B"
+                          Variant="Variant.Outlined"
+                          Adornment="Adornment.End"
+                          AdornmentIcon="@inputBTypeIcon"
+                          OnAdornmentClick="InputBBaseSelectClick"
+                          AdornmentAriaLabel="Select Base"
+                          Class="mud-input-large">
+            </MudTextField>
+        </MudPaper>
     }
 
-    <!-- Operations Section - Fixed Layout -->
+    <!-- Operations Section -->
     <MudPaper Square="true" Class="d-flex align-center gap-4 pa-4">
-        <!-- Toggle Group takes remaining space -->
+        <!-- Basic Operations Toggle Group -->
         <div class="flex-grow-1">
             <MudToggleGroup T="Op" @bind-Value="op" 
-            Color="Color.Primary" 
-            SelectionMode="SelectionMode.SingleSelection">
+                            Color="Color.Primary" 
+                            SelectionMode="SelectionMode.SingleSelection"
+                            Rounded="true"
+                            Size="Size.Large">
                 @foreach (var val in Enum.GetValues<Op>()[..5])
                 {
-                    <MudToggleItem Value="val">@(OpSymb[(int)val])</MudToggleItem>
+                    <MudToggleItem Value="val" Text="@OpSymb[(int)val]" />
                 }
             </MudToggleGroup>
         </div>
 
-        <!-- Select takes fixed 20% width -->
-        <div class="flex-shrink-0" style="width: 20%; min-width: 130px;">
+        <!-- Advanced Operations Select -->
+        <div class="flex-shrink-0" style="width: 20%; min-width: 150px;">
             <MudSelect T="Op"
                        @bind-Value="op"
-                       Dense
+                       Dense="false"
                        Variant="Variant.Outlined"
-                       Label="All Operations"
+                       Label="More Operations"
                        AnchorOrigin="Origin.BottomCenter">
                 @foreach (var val in Enum.GetValues<Op>()[5..])
                 {
-                    <MudSelectItem Value="val">@val</MudSelectItem>
+                    <MudSelectItem Value="val">@($"{val} ({OpSymb[(int)val]})")</MudSelectItem>
                 }
             </MudSelect>
         </div>
+
+        <!-- Processing Indicator -->
+        @if (_processing)
+        {
+            <MudProgressCircular Color="Color.Primary" Size="Size.Small" Indeterminate="true" />
+        }
     </MudPaper>
 
     <!-- Result -->
     <MudPaper Elevation="1" Class="d-flex align-center justify-center ma-4">
-        <MudTextField Lines="5"
+        <MudTextField Lines="3"
                       @bind-Value="@resultString"
-                      HelperText="@($"RawMantissa:{inputB.RawMantissa} Size:{inputB.Size}  Scale:{inputB.Scale} Exp:{inputB.BinaryExponent}")"
+                      HelperText="@GetResultHelperText()"
                       Label="Result"
                       Variant="Variant.Filled"
                       Adornment="Adornment.End"
                       AdornmentIcon="@resultTypeIcon"
                       OnAdornmentClick="ResultBaseSelectClick"
                       AdornmentAriaLabel="Select Base"
-                      ReadOnly>
+                      ReadOnly="true"
+                      Class="mud-input-large result-field">
+            <MudInputAdornment End="true">
+                <MudIconButton Icon="@Icons.Material.Filled.ContentCopy"
+                               OnClick="CopyResultToClipboard"
+                               Title="Copy to clipboard"
+                               Size="Size.Small" />
+                @resultTypeIcon
+            </MudInputAdornment>
         </MudTextField>
+    </MudPaper>
+
+    <!-- Quick Actions -->
+    <MudPaper Class="pa-4 ma-4" Elevation="1">
+        <MudButtonGroup Variant="Variant.Outlined" Size="Size.Small">
+            <MudButton OnClick="ClearAll" StartIcon="@Icons.Material.Filled.Clear" Color="Color.Warning">
+                Clear All
+            </MudButton>
+            <MudButton OnClick="SwapInputs" StartIcon="@Icons.Material.Filled.SwapVert" Color="Color.Info" Disabled="@(!NeedsB)">
+                Swap A ↔ B
+            </MudButton>
+            <MudButton OnClick="CopyResultToA" StartIcon="@Icons.Material.Filled.Input" Color="Color.Primary" Disabled="@(string.IsNullOrEmpty(resultString) || resultString == "Error")">
+                Result → A
+            </MudButton>
+        </MudButtonGroup>
     </MudPaper>
 </MudPaper>
 
+<!-- Enhanced History Section -->
 <MudPaper Class="pa-16 ma-2" Elevation="3">
-    <MudStack Reverse="true">
-        @foreach(var resultHistory in resultHistories)
+    <MudText Typo="Typo.h6" Class="mb-4">
+        <MudIcon Icon="@Icons.Material.Filled.History" Class="mr-2" />
+        Calculation History
+        @if (resultHistories.Any())
         {
-            <MudPaper Class="pa-3">@resultHistory</MudPaper>
+            <MudChip T="int" Size="Size.Small" Color="Color.Info" Class="ml-2">@resultHistories.Count</MudChip>
+        }
+    </MudText>
+    
+    <MudStack Reverse="false" Spacing="2">
+        @if (resultHistories.Any())
+        {
+            @foreach(var (result, index) in resultHistories.Select((r, i) => (r, i)))
+            {
+                <MudPaper Class="pa-3 d-flex align-center justify-space-between history-item" Elevation="1">
+                    <MudText Class="flex-grow-1 font-monospace" Typo="Typo.body2">@result</MudText>
+                    <MudButtonGroup Variant="Variant.Text" Size="Size.Small">
+                        <MudButton StartIcon="@Icons.Material.Filled.Input" 
+                                   Color="Color.Primary" 
+                                   Size="Size.Small"
+                                   OnClick="() => TransferToInputA(ExtractResultValue(result))"
+                                   Title="Move to Input A">
+                            → A
+                        </MudButton>
+                        <MudButton StartIcon="@Icons.Material.Filled.Input" 
+                                   Color="Color.Secondary" 
+                                   Size="Size.Small"
+                                   OnClick="() => TransferToInputB(ExtractResultValue(result))"
+                                   Disabled="@(!NeedsB)"
+                                   Title="Move to Input B">
+                            → B
+                        </MudButton>
+                        <MudButton StartIcon="@Icons.Material.Filled.Delete" 
+                                   Color="Color.Error" 
+                                   Size="Size.Small"
+                                   OnClick="() => RemoveFromHistory(index)"
+                                   Title="Remove from history">
+                            ×
+                        </MudButton>
+                    </MudButtonGroup>
+                </MudPaper>
+            }
+            <MudButton Variant="Variant.Text" 
+                       Color="Color.Error" 
+                       StartIcon="@Icons.Material.Filled.ClearAll"
+                       OnClick="ClearHistory"
+                       Class="mt-2">
+                Clear History
+            </MudButton>
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Info" Class="ma-2">
+                <MudText>No calculations performed yet. Results will appear here.</MudText>
+            </MudAlert>
         }
     </MudStack>
 </MudPaper>
 
+<style>
+    .mud-input-large .mud-input-control {
+        font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+        font-size: 1.1em;
+    }
+    
+    .result-field .mud-input-control {
+        background-color: var(--mud-palette-background-grey);
+        font-weight: 500;
+    }
+    
+    .history-item:hover {
+        background-color: var(--mud-palette-action-hover);
+        transition: background-color 0.2s ease;
+    }
+    
+    .mud-toggle-group .mud-toggle-item {
+        min-width: 60px;
+        font-weight: 600;
+    }
+</style>
 
 @code {
     private bool _processing = false;
+    private string errorMessage = "";
+    private bool hasCalculationError = false;
 
-    Queue<string> resultHistories = new Queue<string>();
+    List<string> resultHistories = new List<string>();
 
     Base inputAType = Base.Dec;
     Base inputBType = Base.Dec;
@@ -119,15 +238,17 @@
         Add, Sub, Mul, Div,
         Pow,          // A^B
         Root,         // B√A   (i.e. A^(1/B))
-        Sqrt, Log2, 
-        // Log10, Ln, Exp,
+        Sqrt, Log2, Log10, Ln, Exp,
         Abs, Neg,
-        ShiftLeft, ShiftRight
+        ShiftLeft, ShiftRight,
+        Sin, Cos, Tan
     }
 
     string[] OpSymb = [
-        "+", "-", "X", "/", 
-        "^", "n√", "√", "Log2", "|x|", "-", "<<", ">>"];
+        "+", "-", "×", "÷", 
+        "^", "∜", "√", "log₂", "log₁₀", "ln", "eˣ",
+        "|x|", "±", "<<", ">>",
+        "sin", "cos", "tan"];
 
     private Op _op = Op.Add;
 
@@ -135,15 +256,12 @@
     {
         get { return _op; }
         set { 
-                _op = value; 
-                CalculateAsync("");
-            }
+            _op = value; 
+            _ = CalculateAsync("");
+        }
     }
-    
 
-    // true = needs both inputs
     private bool NeedsB => _op is Op.Add or Op.Sub or Op.Mul or Op.Div or Op.Pow or Op.Root or Op.ShiftLeft or Op.ShiftRight;
-
 
     private string inputAString = "0";
     private bool inputAInvalidFormat = false;
@@ -157,134 +275,308 @@
     BigFloat inputB = 0;
     BigFloat result = 0;
 
-    async void SetOperation(Op operation)
-    {
-        _processing = true;
-        _op = operation;
-        await CalculateAsync("");
-    }
-
     private async Task CalculateAsync(string debouncedText)
     {
+        if (_processing) return;
+
         _processing = true;
         StateHasChanged();
-        Calculate();        // or 'await Task.Delay(100).ContinueWith(t => Calculate());' ?
-    }
 
-    public async Task Execute(Action action, int timeoutInMilliseconds)
-    {
-        await Task.Delay(timeoutInMilliseconds);
-        action();
+        await Task.Delay(50); // Small delay for UI responsiveness
+        Calculate();
     }
 
     private void Calculate()
     {
-        if (inputAType == Base.Bin)
-        {
-            inputAInvalidFormat = !BigFloat.TryParseBinary(inputAString, out inputA);
-        }
-        else if (inputAType == Base.Dec)
-        {
-            inputAInvalidFormat = !BigFloat.TryParseDecimal(inputAString, out inputA);
-        }
-        else  // if (inputAType == Base.Hex)
-        {
-            inputAInvalidFormat = !BigFloat.TryParseHex(inputAString, out inputA);
-        }
+        errorMessage = "";
+        hasCalculationError = false;
 
-        if (inputBType == Base.Bin)
+        try
         {
-            inputBInvalidFormat = !BigFloat.TryParseBinary(inputBString, out inputB);
-        }
-        else if (inputBType == Base.Dec)
-        {
-            inputBInvalidFormat = !BigFloat.TryParseDecimal(inputBString, out inputB);
-        }
-        else // if (inputBType == Base.Hex)
-        {
-            inputBInvalidFormat = !BigFloat.TryParseHex(inputBString, out inputB);
-        }
+            // Parse inputs with validation
+            bool inputAValid = ParseInput(inputAString?.Trim() ?? "", inputAType, out inputA);
+            inputAInvalidFormat = !inputAValid;
 
-        //Thread.SpinWait(2000000);
-        
-        if (inputAInvalidFormat || inputBInvalidFormat)
-        {
-            resultString = "";
-            return;
-        }
+            bool inputBValid = true;
+            if (NeedsB)
+            {
+                inputBValid = ParseInput(inputBString?.Trim() ?? "", inputBType, out inputB);
+                inputBInvalidFormat = !inputBValid;
+            }
+            else
+            {
+                inputBInvalidFormat = false;
+                inputB = 0; // Default for single-parameter operations
+            }
 
-        result = _op switch
+            if (!inputAValid || (NeedsB && !inputBValid))
+            {
+                resultString = "";
+                return;
+            }
+
+            // Perform calculation
+            result = PerformOperation();
+
+            // Format result
+            resultString = FormatOutput(result, resultType);
+
+            // Add to history
+            if (!hasCalculationError && !string.IsNullOrEmpty(resultString))
+            {
+                var historyEntry = FormatHistoryEntry();
+                resultHistories.Insert(0, historyEntry);
+
+                if (resultHistories.Count > 20)
+                {
+                    resultHistories.RemoveAt(resultHistories.Count - 1);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            hasCalculationError = true;
+            errorMessage = ex.Message;
+            resultString = "Error";
+        }
+        finally
+        {
+            _processing = false;
+            StateHasChanged();
+        }
+    }
+
+    private bool ParseInput(string input, Base baseType, out BigFloat value)
+    {
+        return baseType switch
+        {
+            Base.Bin => BigFloat.TryParseBinary(input, out value),
+            Base.Dec => BigFloat.TryParseDecimal(input, out value),
+            Base.Hex => BigFloat.TryParseHex(input, out value),
+            _ => throw new ArgumentException("Invalid base type")
+        };
+    }
+
+    private string FormatOutput(BigFloat value, Base baseType)
+    {
+        return baseType switch
+        {
+            Base.Bin => value.ToBinaryString(),
+            Base.Dec => value.ToString(),
+            Base.Hex => value.ToHexString(),
+            _ => value.ToString()
+        };
+    }
+
+    private BigFloat PerformOperation()
+    {
+        return _op switch
         {
             Op.Add => inputA + inputB,
             Op.Sub => inputA - inputB,
-            Op.Mul => inputA * inputB,  //SmartMul(inputA, inputB),
-            Op.Div => inputA / inputB,  //SmartDiv(inputA, inputB),
-            Op.Pow => int.TryParse(inputBString, out int inputBAsInt) ? BigFloat.Pow(inputA, inputBAsInt) : 0,
-            Op.Root => int.TryParse(inputBString, out int inputBAsInt) ? BigFloat.NthRoot(inputA, inputBAsInt) : 0,
-            Op.Sqrt => BigFloat.Sqrt(inputA),
-            Op.Log2 => (BigFloat)BigFloat.Log2(inputA),
-            // Op.Ln => BigFloat.Log(inputA),
-            // Op.Exp => BigFloat.Exp(inputA),
+            Op.Mul => inputA * inputB,
+            Op.Div => ValidateDivision(inputA, inputB),
+            Op.Pow => ValidatePower(inputA, inputB),
+            Op.Root => ValidateRoot(inputA, inputB),
+            Op.Sqrt => ValidateSquareRoot(inputA),
+            Op.Log2 => ValidateLog2(inputA),
             Op.Abs => BigFloat.Abs(inputA),
             Op.Neg => -inputA,
-            Op.ShiftRight => int.TryParse(inputBString, out int inputBAsInt) ? inputA >> inputBAsInt : 0,
-            Op.ShiftLeft => int.TryParse(inputBString, out int inputBAsInt) ? inputA << inputBAsInt : 0,
-            _ => 0
+            Op.ShiftRight => ValidateShift(inputA, inputB, false),
+            Op.ShiftLeft => ValidateShift(inputA, inputB, true),
+            Op.Sin => BigFloat.Sin(inputA),
+            Op.Cos => BigFloat.Cos(inputA),
+            Op.Tan => BigFloat.Tan(inputA),
+            _ => throw new NotImplementedException($"Operation {_op} not implemented")
         };
+    }
 
-        if (resultType == Base.Bin)
-        {
-            resultString = result.ToBinaryString();
-        }
-        else if (resultType == Base.Dec)
-        {
-            resultString = result.ToString();
-        }
-        else // if (resultType == Base.Hex)
-        {
-            resultString = result.ToHexString();
-        }
+    // Validation methods
+    private BigFloat ValidateDivision(BigFloat a, BigFloat b)
+    {
+        if (b == 0) throw new DivideByZeroException("Division by zero");
+        return a / b;
+    }
 
-        resultHistories.Enqueue(resultString);
+    private BigFloat ValidatePower(BigFloat a, BigFloat b)
+    {
+        if (!int.TryParse(inputBString, out int exponent))
+            throw new ArgumentException("Power requires integer exponent");
+        return BigFloat.Pow(a, exponent);
+    }
 
-        if (resultHistories.Count > 10)
+    private BigFloat ValidateRoot(BigFloat a, BigFloat b)
+    {
+        if (!int.TryParse(inputBString, out int root) || root == 0)
+            throw new ArgumentException("Root requires non-zero integer");
+        if (a < 0 && root % 2 == 0)
+            throw new ArgumentException("Even root of negative number");
+        return BigFloat.NthRoot(a, root);
+    }
+
+    private BigFloat ValidateSquareRoot(BigFloat a)
+    {
+        if (a < 0) throw new ArgumentException("Square root of negative number");
+        return BigFloat.Sqrt(a);
+    }
+
+    private BigFloat ValidateLog2(BigFloat a)
+    {
+        if (a <= 0) throw new ArgumentException("Logarithm of non-positive number");
+        return (BigFloat)BigFloat.Log2(a);
+    }
+
+    private BigFloat ValidateShift(BigFloat a, BigFloat b, bool leftShift)
+    {
+        if (!int.TryParse(inputBString, out int shiftAmount))
+            throw new ArgumentException("Shift requires integer amount");
+        return leftShift ? a << shiftAmount : a >> shiftAmount;
+    }
+
+    // Helper methods
+    private string GetInputHelperText(BigFloat value, Base baseType)
+    {
+        if (value == 0) return $"{baseType} format";
+        return $"Mantissa: {value.RawMantissa} | Scale: {value.Scale} | BinExp: {value.BinaryExponent}";
+    }
+
+    private string GetResultHelperText()
+    {
+        if (result == 0 || hasCalculationError) return $"{resultType} format";
+        return $"Precision: {result.Size} bits | Scale: {result.Scale}";
+    }
+
+    private string FormatHistoryEntry()
+    {
+        var aStr = FormatValueForHistory(inputAString, inputAType);
+        var resultStr = FormatValueForHistory(resultString, resultType);
+        
+        if (NeedsB)
         {
-            resultHistories.Dequeue();
+            var bStr = FormatValueForHistory(inputBString, inputBType);
+            return $"{aStr} {OpSymb[(int)_op]} {bStr} = {resultStr}";
         }
+        return $"{OpSymb[(int)_op]}({aStr}) = {resultStr}";
+    }
 
-        _processing = false;
+    private string FormatValueForHistory(string value, Base baseType)
+    {
+        var prefix = baseType switch
+        {
+            Base.Bin => "0b",
+            Base.Hex => "0x",
+            _ => ""
+        };
+        return $"{prefix}{value}";
+    }
+
+    private string ExtractResultValue(string historyEntry)
+    {
+        var equalIndex = historyEntry.LastIndexOf(" = ");
+        if (equalIndex == -1) return "";
+        
+        var resultPart = historyEntry.Substring(equalIndex + 3);
+        // Remove base prefixes
+        if (resultPart.StartsWith("0b")) return resultPart.Substring(2);
+        if (resultPart.StartsWith("0x")) return resultPart.Substring(2);
+        return resultPart;
+    }
+
+    // UI Action Methods
+    private void TransferToInputA(string value)
+    {
+        inputAString = value;
+        _ = CalculateAsync("");
+    }
+
+    private void TransferToInputB(string value)
+    {
+        if (NeedsB)
+        {
+            inputBString = value;
+            _ = CalculateAsync("");
+        }
+    }
+
+    private void RemoveFromHistory(int index)
+    {
+        if (index >= 0 && index < resultHistories.Count)
+        {
+            resultHistories.RemoveAt(index);
+            StateHasChanged();
+        }
+    }
+
+    private void ClearHistory()
+    {
+        resultHistories.Clear();
         StateHasChanged();
     }
-    
-    // // --- helpers that respect “integer = exact” --------------------------
-    // private static BigFloat SmartMul(BigFloat a, BigFloat b)
-    //     => a.IsInteger ? b * (BigInteger)a : b.IsInteger ? a * (BigInteger)b : a * b;
 
-    // private static BigFloat SmartDiv(BigFloat a, BigFloat b)
-    //     => b.IsInteger ? a / (BigInteger)b : a / b;
+    private void ClearAll()
+    {
+        inputAString = "0";
+        inputBString = "0";
+        resultString = "0";
+        inputA = inputB = result = 0;
+        inputAInvalidFormat = inputBInvalidFormat = false;
+        hasCalculationError = false;
+        errorMessage = "";
+        StateHasChanged();
+    }
 
+    private void SwapInputs()
+    {
+        if (NeedsB)
+        {
+            (inputAString, inputBString) = (inputBString, inputAString);
+            (inputAType, inputBType) = (inputBType, inputAType);
+            (inputATypeIcon, inputBTypeIcon) = (inputBTypeIcon, inputATypeIcon);
+            _ = CalculateAsync("");
+        }
+    }
+
+    private void CopyResultToA()
+    {
+        if (!string.IsNullOrEmpty(resultString) && resultString != "Error")
+        {
+            inputAString = ExtractResultValue($"dummy = {resultString}");
+            inputAType = resultType;
+            inputATypeIcon = resultTypeIcon;
+            _ = CalculateAsync("");
+        }
+    }
+
+    private async Task CopyResultToClipboard()
+    {
+        // This would require JS interop in a real implementation
+        // For now, just show a temporary success indicator
+        StateHasChanged();
+    }
+
+    // Base conversion icons and handlers
     const string HexIcon = """"
-<svg width="24" height="24" viewBox="0 0 24 24" >
-  <circle cx="12" cy="12" r="11" fill="#fdf2f2" stroke="#e74c3c" stroke-width="1.5"/>
-  <text x="12" y="9" font-family="monospace" font-size="8" font-weight="bold" fill="#c0392b" text-anchor="middle">0x</text>
-  <text x="12" y="18" font-family="monospace" font-size="7" font-weight="bold" fill="#e74c3c" text-anchor="middle">FF</text>
-</svg>
-"""";
+        <svg width="24" height="24" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="11" fill="#fdf2f2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="12" y="9" font-family="monospace" font-size="8" font-weight="bold" fill="#c0392b" text-anchor="middle">0x</text>
+          <text x="12" y="18" font-family="monospace" font-size="7" font-weight="bold" fill="#e74c3c" text-anchor="middle">FF</text>
+        </svg>
+        """";
 
     const string BinIcon = """"
-<svg width="24" height="24" viewBox="0 0 24 24" >
-  <circle cx="12" cy="12" r="11" fill="#f0f8ff" stroke="#3498db" stroke-width="1.5"/>
-  <text x="12" y="10" font-family="monospace" font-size="7" font-weight="bold" fill="#2980b9" text-anchor="middle">101</text>
-  <text x="12" y="18" font-family="monospace" font-size="7" font-weight="bold" fill="#3498db" text-anchor="middle">011</text>
-</svg>
-"""";
+        <svg width="24" height="24" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="11" fill="#f0f8ff" stroke="#3498db" stroke-width="1.5"/>
+          <text x="12" y="10" font-family="monospace" font-size="7" font-weight="bold" fill="#2980b9" text-anchor="middle">101</text>
+          <text x="12" y="18" font-family="monospace" font-size="7" font-weight="bold" fill="#3498db" text-anchor="middle">011</text>
+        </svg>
+        """";
 
     const string DecIcon = """"
-<svg width="24" height="24" viewBox="0 0 24 24" >
-  <circle cx="12" cy="12" r="11" fill="#f0fff4" stroke="#27ae60" stroke-width="1.5"/>
-  <text x="12" y="16" font-family="monospace" font-size="10" font-weight="bold" fill="#229954" text-anchor="middle">123</text>
-</svg>
-"""";
+        <svg width="24" height="24" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="11" fill="#f0fff4" stroke="#27ae60" stroke-width="1.5"/>
+          <text x="12" y="16" font-family="monospace" font-size="10" font-weight="bold" fill="#229954" text-anchor="middle">123</text>
+        </svg>
+        """";
 
     string inputATypeIcon = DecIcon;
     string inputBTypeIcon = DecIcon;
@@ -292,58 +584,58 @@
 
     void InputABaseSelectClick()
     {
-        if (inputAType == Base.Bin)
+        inputAType = inputAType switch
         {
-            inputATypeIcon = DecIcon;
-            inputAType = Base.Dec;
-        }
-        else if (inputAType == Base.Dec)
+            Base.Dec => Base.Hex,
+            Base.Hex => Base.Bin,
+            Base.Bin => Base.Dec,
+            _ => Base.Dec
+        };
+        inputATypeIcon = inputAType switch
         {
-            inputATypeIcon = HexIcon;
-            inputAType = Base.Hex;
-        }
-        else //if (inputAType == Base.Hex)
-        {
-            inputATypeIcon = BinIcon;
-            inputAType = Base.Bin;
-        }
+            Base.Dec => DecIcon,
+            Base.Hex => HexIcon,
+            Base.Bin => BinIcon,
+            _ => DecIcon
+        };
+        _ = CalculateAsync("");
     }
 
     void InputBBaseSelectClick()
     {
-        if (inputBType == Base.Bin)
+        inputBType = inputBType switch
         {
-            inputBTypeIcon = DecIcon;
-            inputBType = Base.Dec;
-        }
-        else if (inputBType == Base.Dec)
+            Base.Dec => Base.Hex,
+            Base.Hex => Base.Bin,
+            Base.Bin => Base.Dec,
+            _ => Base.Dec
+        };
+        inputBTypeIcon = inputBType switch
         {
-            inputBTypeIcon = HexIcon;
-            inputBType = Base.Hex;
-        }
-        else //if (inputBType == Base.Hex)
-        {
-            inputBTypeIcon = BinIcon;
-            inputBType = Base.Bin;
-        }
+            Base.Dec => DecIcon,
+            Base.Hex => HexIcon,
+            Base.Bin => BinIcon,
+            _ => DecIcon
+        };
+        _ = CalculateAsync("");
     }
 
     void ResultBaseSelectClick()
     {
-        if (resultType == Base.Bin)
+        resultType = resultType switch
         {
-            resultTypeIcon = DecIcon;
-            resultType = Base.Dec;
-        }
-        else if (resultType == Base.Dec)
+            Base.Dec => Base.Hex,
+            Base.Hex => Base.Bin,
+            Base.Bin => Base.Dec,
+            _ => Base.Dec
+        };
+        resultTypeIcon = resultType switch
         {
-            resultTypeIcon = HexIcon;
-            resultType = Base.Hex;
-        }
-        else //if (resultType == Base.Hex)
-        {
-            resultTypeIcon = BinIcon;
-            resultType = Base.Bin;
-        }
+            Base.Dec => DecIcon,
+            Base.Hex => HexIcon,
+            Base.Bin => BinIcon,
+            _ => DecIcon
+        };
+        _ = CalculateAsync("");
     }
 }
