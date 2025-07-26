@@ -498,13 +498,13 @@
     private string GetInputHelperText(BigFloat value, Base baseType)
     {
         if (value == 0) return $"{baseType} format";
-        return $"Mantissa: {value.RawMantissa} | Scale: {value.Scale} | BinExp: {value.BinaryExponent}";
+        return $"Bits: {value.Size} | Precision: {value.Precision} | Accuracy: {value.Accuracy} | Scale: {value.Scale} | BinExp: {value.BinaryExponent}";
     }
 
     private string GetResultHelperText()
     {
         if (result == 0 || hasCalculationError) return $"{resultType} format";
-        return $"Precision: {result.Size} bits | Scale: {result.Scale}";
+        return $"Bits: {result.Size} | Precision: {result.Precision} | Accuracy: {result.Accuracy} | Scale: {result.Scale} | BinExp: {result.BinaryExponent}";
     }
 
     private string ExtractResultValue(string historyEntry)
