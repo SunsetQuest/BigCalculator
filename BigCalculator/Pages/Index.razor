@@ -180,8 +180,8 @@
 
     private void TransferToInputA(string value)
     {
-        // Todo: Lets transfer anything after the "=" in value to inputAString
-        inputAString = value;
+        // Lets transfer anything after the "=" in value to inputAString 
+        inputAString = value.Split('=').Last().Trim();
 
         _ = CalculateAsync("");
         StateHasChanged();
@@ -189,9 +189,10 @@
 
     private void TransferToInputB(string value)
     {
-        if (NeedsB)
+        //if (NeedsB)
         {
-            inputBString = value;
+            // Lets transfer anything after the "=" in value to inputAString
+            inputBString = value.Split('=').Last().Trim();
             _ = CalculateAsync("");
             StateHasChanged();
         }
