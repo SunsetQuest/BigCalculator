@@ -132,6 +132,7 @@
     </MudPaper>
 </MudPaper>
 
+
 <!-- Enhanced History Section -->
 <MudPaper Class="pa-16 ma-2" Elevation="3">
     <MudText Typo="Typo.h6" Class="mb-4">
@@ -293,20 +294,34 @@
 
         try
         {
-            // Parse inputs with validation
-            bool inputAValid = ParseInput(inputAString?.Trim() ?? "", inputAType, out inputA);
+            // Parse Input A with improved error handling
+            bool inputAValid = inputAType switch
+            {
+                Base.Bin => BigFloat.TryParseBinary(inputAString?.Trim() ?? "", out inputA),
+                Base.Dec => BigFloat.TryParseDecimal(inputAString?.Trim() ?? "", out inputA),
+                Base.Hex => BigFloat.TryParseHex(inputAString?.Trim() ?? "", out inputA),
+                _ => false
+            };
+
             inputAInvalidFormat = !inputAValid;
 
+            // Parse Input B with improved error handling
             bool inputBValid = true;
             if (NeedsB)
             {
-                inputBValid = ParseInput(inputBString?.Trim() ?? "", inputBType, out inputB);
+                inputBValid = inputBType switch
+                {
+                    Base.Bin => BigFloat.TryParseBinary(inputBString?.Trim() ?? "", out inputB),
+                    Base.Dec => BigFloat.TryParseDecimal(inputBString?.Trim() ?? "", out inputB),
+                    Base.Hex => BigFloat.TryParseHex(inputBString?.Trim() ?? "", out inputB),
+                    _ => false
+                };
+
                 inputBInvalidFormat = !inputBValid;
             }
             else
             {
                 inputBInvalidFormat = false;
-                inputB = 0; // Default for single-parameter operations
             }
 
             if (!inputAValid || (NeedsB && !inputBValid))
@@ -315,19 +330,40 @@
                 return;
             }
 
-            // Perform calculation
-            result = PerformOperation();
-
-            // Format result
-            resultString = FormatOutput(result, resultType);
-
-            // Add to history
-            if (!hasCalculationError && !string.IsNullOrEmpty(resultString))
+            // Perform calculation with domain-specific validations
+            result = _op switch
             {
-                var historyEntry = FormatHistoryEntry();
+                Op.Add => inputA + inputB,
+                Op.Sub => inputA - inputB,
+                Op.Mul => inputA * inputB,
+                Op.Div => ValidateDivision(inputA, inputB),
+                Op.Pow => ValidatePower(inputA, inputB),
+                Op.Root => ValidateRoot(inputA, inputB),
+                Op.Sqrt => ValidateSquareRoot(inputA),
+                Op.Log2 => ValidateLogarithm(inputA),
+                Op.Abs => BigFloat.Abs(inputA),
+                Op.Neg => -inputA,
+                Op.ShiftRight => ValidateShift(inputA, inputB, false),
+                Op.ShiftLeft => ValidateShift(inputA, inputB, true),
+                _ => throw new NotImplementedException($"Operation {_op} not implemented")
+            };
+
+            // Format result based on selected base
+            resultString = resultType switch
+            {
+                Base.Bin => result.ToBinaryString(),
+                Base.Dec => result.ToString(),
+                Base.Hex => result.ToHexString(),
+                _ => result.ToString()
+            };
+
+            // Add to history only if calculation succeeded
+            if (!hasCalculationError)
+            {
+                var historyEntry = $"{FormatHistoryEntry()}";
                 resultHistories.Insert(0, historyEntry);
 
-                if (resultHistories.Count > 20)
+                if (resultHistories.Count > 20) // Increased history size
                 {
                     resultHistories.RemoveAt(resultHistories.Count - 1);
                 }
@@ -336,7 +372,7 @@
         catch (Exception ex)
         {
             hasCalculationError = true;
-            errorMessage = ex.Message;
+            errorMessage = $"Calculation error: {ex.Message}";
             resultString = "Error";
         }
         finally
@@ -346,91 +382,101 @@
         }
     }
 
-    private bool ParseInput(string input, Base baseType, out BigFloat value)
-    {
-        return baseType switch
-        {
-            Base.Bin => BigFloat.TryParseBinary(input, out value),
-            Base.Dec => BigFloat.TryParseDecimal(input, out value),
-            Base.Hex => BigFloat.TryParseHex(input, out value),
-            _ => throw new ArgumentException("Invalid base type")
-        };
-    }
-
-    private string FormatOutput(BigFloat value, Base baseType)
-    {
-        return baseType switch
-        {
-            Base.Bin => value.ToBinaryString(),
-            Base.Dec => value.ToString(),
-            Base.Hex => value.ToHexString(),
-            _ => value.ToString()
-        };
-    }
-
-    private BigFloat PerformOperation()
-    {
-        return _op switch
-        {
-            Op.Add => inputA + inputB,
-            Op.Sub => inputA - inputB,
-            Op.Mul => inputA * inputB,
-            Op.Div => ValidateDivision(inputA, inputB),
-            Op.Pow => ValidatePower(inputA, inputB),
-            Op.Root => ValidateRoot(inputA, inputB),
-            Op.Sqrt => ValidateSquareRoot(inputA),
-            Op.Log2 => ValidateLog2(inputA),
-            Op.Abs => BigFloat.Abs(inputA),
-            Op.Neg => -inputA,
-            Op.ShiftRight => ValidateShift(inputA, inputB, false),
-            Op.ShiftLeft => ValidateShift(inputA, inputB, true),
-            Op.Sin => BigFloat.Sin(inputA),
-            Op.Cos => BigFloat.Cos(inputA),
-            Op.Tan => BigFloat.Tan(inputA),
-            _ => throw new NotImplementedException($"Operation {_op} not implemented")
-        };
-    }
-
-    // Validation methods
     private BigFloat ValidateDivision(BigFloat a, BigFloat b)
     {
-        if (b == 0) throw new DivideByZeroException("Division by zero");
+        if (b == 0)
+        {
+            throw new DivideByZeroException("Division by zero is undefined");
+        }
         return a / b;
     }
 
     private BigFloat ValidatePower(BigFloat a, BigFloat b)
     {
         if (!int.TryParse(inputBString, out int exponent))
-            throw new ArgumentException("Power requires integer exponent");
+        {
+            throw new ArgumentException("Power operation requires integer exponent");
+        }
+        if (a == 0 && exponent < 0)
+        {
+            throw new ArgumentException("Cannot raise zero to negative power");
+        }
         return BigFloat.Pow(a, exponent);
     }
 
     private BigFloat ValidateRoot(BigFloat a, BigFloat b)
     {
-        if (!int.TryParse(inputBString, out int root) || root == 0)
-            throw new ArgumentException("Root requires non-zero integer");
+        if (!int.TryParse(inputBString, out int root))
+        {
+            throw new ArgumentException("Root operation requires integer root value");
+        }
+        if (root == 0)
+        {
+            throw new ArgumentException("Root cannot be zero");
+        }
         if (a < 0 && root % 2 == 0)
-            throw new ArgumentException("Even root of negative number");
+        {
+            throw new ArgumentException("Even root of negative number is not real");
+        }
         return BigFloat.NthRoot(a, root);
     }
 
     private BigFloat ValidateSquareRoot(BigFloat a)
     {
-        if (a < 0) throw new ArgumentException("Square root of negative number");
+        if (a < 0)
+        {
+            throw new ArgumentException("Square root of negative number is not real");
+        }
         return BigFloat.Sqrt(a);
     }
 
-    private BigFloat ValidateLog2(BigFloat a)
+    private BigFloat ValidateLogarithm(BigFloat a)
     {
-        if (a <= 0) throw new ArgumentException("Logarithm of non-positive number");
+        if (a <= 0)
+        {
+            throw new ArgumentException("Logarithm undefined for non-positive numbers");
+        }
         return (BigFloat)BigFloat.Log2(a);
     }
 
     private BigFloat ValidateShift(BigFloat a, BigFloat b, bool leftShift)
     {
         if (!int.TryParse(inputBString, out int shiftAmount))
-            throw new ArgumentException("Shift requires integer amount");
+        {
+            throw new ArgumentException("Shift operation requires integer shift amount");
+        }
+        if (Math.Abs(shiftAmount) > 1000000) // Reasonable limit
+        {
+            throw new ArgumentException("Shift amount too large");
+        }
         return leftShift ? a << shiftAmount : a >> shiftAmount;
+    }
+
+    private string FormatHistoryEntry()
+    {
+        var aStr = FormatValueForHistory(inputAString, inputAType);
+        var resultStr = FormatValueForHistory(resultString, resultType);
+
+        if (NeedsB)
+        {
+            var bStr = FormatValueForHistory(inputBString, inputBType);
+            return $"{aStr} {OpSymb[(int)_op]} {bStr} = {resultStr}";
+        }
+        else
+        {
+            return $"{OpSymb[(int)_op]}({aStr}) = {resultStr}";
+        }
+    }
+
+    private string FormatValueForHistory(string value, Base baseType)
+    {
+        var prefix = baseType switch
+        {
+            Base.Bin => "0b",
+            Base.Hex => "0x",
+            _ => ""
+        };
+        return $"{prefix}{value}";
     }
 
     // Helper methods
@@ -444,30 +490,6 @@
     {
         if (result == 0 || hasCalculationError) return $"{resultType} format";
         return $"Precision: {result.Size} bits | Scale: {result.Scale}";
-    }
-
-    private string FormatHistoryEntry()
-    {
-        var aStr = FormatValueForHistory(inputAString, inputAType);
-        var resultStr = FormatValueForHistory(resultString, resultType);
-        
-        if (NeedsB)
-        {
-            var bStr = FormatValueForHistory(inputBString, inputBType);
-            return $"{aStr} {OpSymb[(int)_op]} {bStr} = {resultStr}";
-        }
-        return $"{OpSymb[(int)_op]}({aStr}) = {resultStr}";
-    }
-
-    private string FormatValueForHistory(string value, Base baseType)
-    {
-        var prefix = baseType switch
-        {
-            Base.Bin => "0b",
-            Base.Hex => "0x",
-            _ => ""
-        };
-        return $"{prefix}{value}";
     }
 
     private string ExtractResultValue(string historyEntry)
