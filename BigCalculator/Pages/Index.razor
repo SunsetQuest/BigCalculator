@@ -93,6 +93,7 @@
         }
     </MudPaper>
 
+                           ThumbIcon="@(autoPrecisionMode ? Icons.Material.Filled.Auto : Icons.Material.Filled.Tune)"
     <!-- Result -->
     <MudPaper Elevation="1" Class="d-flex align-center justify-center ma-4">
         <MudTextField Lines="3"
@@ -395,6 +396,7 @@
             StateHasChanged();
         }
 
+                    inputA = BigFloat.SetAccuracy(inputA, manualPrecision);
     }
 
     private BigFloat ValidateDivision(BigFloat a, BigFloat b)
