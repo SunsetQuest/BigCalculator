@@ -498,13 +498,13 @@
     private string GetInputHelperText(BigFloat value, Base baseType)
     {
         if (value == 0) return $"{baseType} format";
-        return $"Bits: {value.Size} | Precision: {value.Precision} | Accuracy: {value.Accuracy} | Scale: {value.Scale} | BinExp: {value.BinaryExponent}";
+        return $"Bits: {value.Size} | Precision: {value.Precision} | Accuracy: {value.Accuracy} | Scale: {value.Scale} | BinExp: {value.BinaryExponent}{(value.IsInteger ? "| IsInteger" : "")}{(value.FitsInADouble() ? "| FitsInADouble" : "")}{(value.IsOneBitFollowedByZeroBits ? "| IsOneBitFollowedByZeroBits" : "")}";
     }
 
     private string GetResultHelperText()
     {
         if (result == 0 || hasCalculationError) return $"{resultType} format";
-        return $"Bits: {result.Size} | Precision: {result.Precision} | Accuracy: {result.Accuracy} | Scale: {result.Scale} | BinExp: {result.BinaryExponent}";
+        return $"Bits: {result.Size} | Precision: {result.Precision} | Accuracy: {result.Accuracy} | Scale: {result.Scale} | BinExp: {result.BinaryExponent}{(result.IsInteger ? "| IsInteger" : "")}{(result.FitsInADouble() ? "| FitsInADouble" : "")}{(result.IsOneBitFollowedByZeroBits ? "| IsOneBitFollowedByZeroBits" : "")}";
     }
 
     private string ExtractResultValue(string historyEntry)
