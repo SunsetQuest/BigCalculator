@@ -1,0 +1,33 @@
+BigCalculator.org Project Overview
+Project: Big Number Calculator (online)
+Tech Stack:
+Frontend: C# Blazor WebAssembly (hosted on GitHub Pages)
+UI Framework: MudBlazor
+Repository: https://github.com/SunsetQuest/BigFloat
+Live Site: https://bigcalculator.org
+________________________________________
+Core Features
+Base Conversion: Input/output supports decimal (default), binary, and hexadecimal. Users can switch formats via a "Change Base" icon, automatically converting values.
+Operations:
+	o Primary functions: Add, Sub, Mult, Div, Power (one-click access).
+	o Extended functions accessible through a menu (e.g., Sqrt, etc.).
+ 	o More functions planned: Trigonometric, logarithmic, factorial, etc.
+Auto-Calculation: Automatically recomputes results ~500ms after input stops or when a function is selected.
+Adaptive Parameters: Single-parameter functions (e.g., Sqrt(A)) hide unnecessary fields like B.
+History: Logs calculation history at the bottom of the page, allowing direct copy to A or B.
+UI/UX:
+	o	Dark mode support.
+	o	PWA-like behavior: can be pinned/installed as an app.
+No hard built in limits - BigFloat can handle a million of digit.
+Provides non-intrusive information about the input and output values like Binary exponent, bit length and more.
+________________________________________
+Output Precision
+Flexible Precision Control:
+Adjustable via slider or text input.
+Auto Mode: Output precision matches input without truncation.
+Manual Mode: Users can enforce higher precision (e.g., 64-bit or arbitrary).
+Example:
+	 Auto: 12345.67 × 12.34567 = 152415.6
+	 Forced 64-bit: 12345.67 × 12.34567 = 152415.56774890000000
+Forced 64-bit Implementation hint: 'inputA = inputA.Precision < 64 ? BigFloat.SetPrecision(inputA, 64) : inputA;'
+

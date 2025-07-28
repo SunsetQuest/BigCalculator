@@ -56,7 +56,7 @@
     }
 
     <!-- Operations Section -->
-    <MudPaper Square="true" Class="d-flex align-center gap-4 pa-4">
+    <MudPaper Elevation="1" Class="d-flex align-center justify-center ma-4">
         <!-- Basic Operations Toggle Group -->
         <div class="flex-grow-1">
             <MudToggleGroup T="Op" @bind-Value="op" 
@@ -81,7 +81,7 @@
                        AnchorOrigin="Origin.BottomCenter">
                 @foreach (var val in Enum.GetValues<Op>()[5..])
                 {
-                    <MudSelectItem Value="val">@($"{val} ({OpSymb[(int)val]})")</MudSelectItem>
+                    <MudSelectItem Value="val">@($"{OpSymb[(int)val]}")</MudSelectItem>
                 }
             </MudSelect>
         </div>
@@ -91,9 +91,22 @@
         {
             <MudProgressCircular Color="Color.Primary" Size="Size.Small" Indeterminate="true" />
         }
+
+        <!-- Precision Control Section -->
+        <MudItem xs="12" sm="2">
+            <MudTextField @bind-Value="userRequestedPrecision"
+                            Label="Precision"
+                            Variant="Variant.Outlined"
+                            Adornment="Adornment.End"
+                            AdornmentText="bits"
+                            Immediate="true"
+                            OnKeyUp="@(async (e) => { if (e.Key == "Enter") await CalculateAsync(""); })"
+                            Error="@(userRequestedPrecision < 1 || userRequestedPrecision > 100000)"
+                            ErrorText="@(userRequestedPrecision < 0 || userRequestedPrecision > 100000 ? "Precision must be 0 for auto or 1-100000 bits" : "")" />
+        </MudItem>
+
     </MudPaper>
 
-                           ThumbIcon="@(autoPrecisionMode ? Icons.Material.Filled.Auto : Icons.Material.Filled.Tune)"
     <!-- Result -->
     <MudPaper Elevation="1" Class="d-flex align-center justify-center ma-4">
         <MudTextField Lines="3"
@@ -177,6 +190,10 @@
     // Convert Queue to List for better manipulation
     List<string> resultHistories = new List<string>();
 
+    // Precision Control Variables
+    private int userRequestedPrecision = 64;
+
+
     // UI Action Methods
 
     private void TransferToInputA(string value)
@@ -206,6 +223,13 @@
             resultHistories.RemoveAt(index);
             StateHasChanged();
         }
+    }
+
+    private void SetPrecision(int precision)
+    {
+        userRequestedPrecision = precision;
+        _ = CalculateAsync("");
+        StateHasChanged();
     }
 }
 
@@ -345,6 +369,9 @@
                 return;
             }
 
+            // Apply precision control logic
+            ApplyPrecisionControl();
+
             // Perform calculation with domain-specific validations
             result = _op switch
             {
@@ -395,8 +422,27 @@
             _processing = false;
             StateHasChanged();
         }
+    }
 
-                    inputA = BigFloat.SetAccuracy(inputA, manualPrecision);
+    private void ApplyPrecisionControl()
+    {
+            // Apply precision based on operation type
+            if (_op is Op.Add or Op.Sub)
+            {
+                // For Add/Sub operations, we work with accuracy
+                if (inputA.Accuracy < userRequestedPrecision)
+                    inputA = BigFloat.ExtendPrecision(inputA, userRequestedPrecision - inputA.Accuracy);
+                if (NeedsB && inputB.Accuracy < userRequestedPrecision)
+                    inputB = BigFloat.ExtendPrecision(inputB, userRequestedPrecision - inputB.Accuracy);  // SetAccuracy(inputB, manualPrecision);
+            }
+            else
+            {
+                // For Mul/Div/Pow operations, we work with precision
+                if (inputA.Precision < userRequestedPrecision)
+                    inputA = BigFloat.SetPrecision(inputA, userRequestedPrecision);
+                if (NeedsB && inputB.Precision < userRequestedPrecision)
+                    inputB = BigFloat.SetPrecision(inputB, userRequestedPrecision);
+            }
     }
 
     private BigFloat ValidateDivision(BigFloat a, BigFloat b)
@@ -515,6 +561,11 @@
         if (equalIndex == -1) return "";
         
         var resultPart = historyEntry.Substring(equalIndex + 3);
+        // Remove precision info [...]
+        var bracketIndex = resultPart.LastIndexOf(" [");
+        if (bracketIndex != -1)
+            resultPart = resultPart.Substring(0, bracketIndex);
+            
         // Remove base prefixes
         if (resultPart.StartsWith("0b")) return resultPart.Substring(2);
         if (resultPart.StartsWith("0x")) return resultPart.Substring(2);
