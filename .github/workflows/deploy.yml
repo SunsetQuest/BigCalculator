@@ -37,13 +37,13 @@ jobs:
           dotnet-version: '9.0.x'
 
       - name: Restore dependencies
-        run: dotnet restore BigCalculator.csproj
+        run: dotnet restore BigCalculator/BigCalculator.csproj
 
       - name: Build
-        run: dotnet build BigCalculator.csproj --no-restore --configuration Release
+        run: dotnet build BigCalculator/BigCalculator.csproj --no-restore --configuration Release
 
       - name: Publish Blazor WebAssembly
-        run: dotnet publish BigCalculator.csproj -c Release -o dist --nologo
+        run: dotnet publish BigCalculator/BigCalculator.csproj -c Release -o dist --nologo
 
       # For custom domain (bigcalculator.org), base href should remain as "/"
       # No changes needed to index.html base tag
