@@ -1,0 +1,115 @@
+﻿@page "/about"
+
+<PageTitle>About - BigCalculator</PageTitle>
+
+<MudPaper Class="pa-16 ma-2" Elevation="3">
+    <MudText Typo="Typo.h3" Class="mb-4">About BigCalculator</MudText>
+
+    <MudText Typo="Typo.body1" Class="mb-4">
+        Welcome to BigCalculator.org, a powerful web-based arbitrary-precision calculator that can handle numbers of virtually any size.
+        Built with cutting-edge web technologies, this application provides accurate calculations beyond the limitations of standard
+        floating-point arithmetic.
+    </MudText>
+
+    <MudDivider Class="my-6" />
+
+    <MudText Typo="Typo.h5" Class="mb-3">Key Features</MudText>
+    <MudList T="string" Dense="true" Class="mb-4">
+        <MudListItem Icon="@Icons.Material.Filled.CheckCircle">
+            <MudText>Arbitrary precision arithmetic with no hard limits on number size</MudText>
+        </MudListItem>
+        <MudListItem Icon="@Icons.Material.Filled.CheckCircle">
+            <MudText>Support for decimal, binary, and hexadecimal number formats</MudText>
+        </MudListItem>
+        <MudListItem Icon="@Icons.Material.Filled.CheckCircle">
+            <MudText>Comprehensive set of mathematical operations including basic arithmetic, powers, roots, and more</MudText>
+        </MudListItem>
+        <MudListItem Icon="@Icons.Material.Filled.CheckCircle">
+            <MudText>User-adjustable precision control for exact or high-precision calculations</MudText>
+        </MudListItem>
+        <MudListItem Icon="@Icons.Material.Filled.CheckCircle">
+            <MudText>Calculation history with easy transfer of results between operations</MudText>
+        </MudListItem>
+        <MudListItem Icon="@Icons.Material.Filled.CheckCircle">
+            <MudText>Progressive Web App (PWA) support - install it like a native app!</MudText>
+        </MudListItem>
+        <MudListItem Icon="@Icons.Material.Filled.CheckCircle">
+            <MudText>Dark mode support for comfortable viewing</MudText>
+        </MudListItem>
+    </MudList>
+
+    <MudDivider Class="my-6" />
+
+    <MudText Typo="Typo.h5" Class="mb-3">Technology Stack</MudText>
+    <MudGrid Class="mb-4">
+        <MudItem xs="12" sm="6">
+            <MudCard Elevation="2">
+                <MudCardContent>
+                    <MudText Typo="Typo.h6" Class="mb-2">Frontend</MudText>
+                    <MudList T="string" Dense="true">
+                        <MudListItem Icon="@Icons.Material.Filled.Code">C# Blazor WebAssembly</MudListItem>
+                        <MudListItem Icon="@Icons.Material.Filled.Palette">MudBlazor UI Framework</MudListItem>
+                        <MudListItem Icon="@Icons.Material.Filled.Web">.NET 9.0</MudListItem>
+                    </MudList>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        <MudItem xs="12" sm="6">
+            <MudCard Elevation="2">
+                <MudCardContent>
+                    <MudText Typo="Typo.h6" Class="mb-2">Core Library</MudText>
+                    <MudList T="string" Dense="true">
+                        <MudListItem Icon="@Icons.Material.Filled.Functions">BigFloatLibrary v2.1.0</MudListItem>
+                        <MudListItem Icon="@Icons.Material.Filled.Memory">Arbitrary Precision Arithmetic</MudListItem>
+                        <MudListItem Icon="@Icons.Material.Filled.Speed">Optimized for Performance</MudListItem>
+                    </MudList>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+
+    <MudDivider Class="my-6" />
+
+    <MudText Typo="Typo.h5" Class="mb-3">Development Credits</MudText>
+    <MudText Typo="Typo.body1" Class="mb-3">
+        BigCalculator was created by <MudLink Href="https://ryanwhite.org" Target="_blank">Ryan Scott White</MudLink>,
+        a software developer with a passion for AI programming and mathematical computation.
+    </MudText>
+
+    <MudAlert Severity="Severity.Info" Class="mb-4">
+        <MudText>
+            This application was developed with assistance from AI technologies including Claude AI by Anthropic
+            and ChatGPT by OpenAI, showcasing the power of human-AI collaboration in modern software development.
+        </MudText>
+    </MudAlert>
+
+    <MudDivider Class="my-6" />
+
+    <MudText Typo="Typo.h5" Class="mb-3">Open Source</MudText>
+    <MudText Typo="Typo.body1" Class="mb-3">
+        BigCalculator is open source! You can find the complete source code, contribute improvements, or report issues on our
+        <MudLink Href="https://github.com/SunsetQuest/BigCalculator" Target="_blank">GitHub repository</MudLink>.
+    </MudText>
+
+    <MudDivider Class="my-6" />
+
+    <MudText Typo="Typo.h5" Class="mb-3">Related Projects</MudText>
+    <MudList T="string" Dense="true">
+        <MudListItem Icon="@Icons.Material.Filled.Link">
+            <MudLink Href="https://bigfloat.org" Target="_blank">BigFloat Library</MudLink> - The core arbitrary-precision arithmetic library
+        </MudListItem>
+        <MudListItem Icon="@Icons.Material.Filled.Link">
+            <MudLink Href="https://github.com/SunsetQuest/BigFloat" Target="_blank">BigFloat GitHub</MudLink> - Source code for the BigFloat library
+        </MudListItem>
+    </MudList>
+
+    <MudDivider Class="my-6" />
+
+    <MudText Typo="Typo.body2" Color="Color.Secondary" Align="Align.Center">
+        BigCalculator.org - Empowering precise mathematical computation on the web
+    </MudText>
+</MudPaper>
+
+@code {
+    // No code needed for this static about page
+}
