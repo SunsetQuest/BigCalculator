@@ -27,12 +27,27 @@
     <MudDrawer @bind-Open="@_drawerOpen">
         <MudNavMenu>
             <MudNavLink Href="/" Icon="@Icons.Material.Filled.Calculate" Match="NavLinkMatch.All">Big Float Calculator</MudNavLink>
-            @*           <MudNavLink Href="/servers" Match="NavLinkMatch.Prefix">More</MudNavLink>
-            <MudNavGroup Title="Settings" Expanded="true">
-                <MudNavLink Href="/users"  Match="NavLinkMatch.Prefix">Users</MudNavLink>
-                <MudNavLink Href="/security"  Match="NavLinkMatch.Prefix">Security</MudNavLink>
-            </MudNavGroup>*@
-            <MudNavLink Href="/about" Icon="@Icons.Material.Filled.CoffeeMaker" Match="NavLinkMatch.Prefix">About</MudNavLink>
+
+            <MudDivider Class="my-2" />
+
+            <MudNavGroup Title="Resources" Icon="@Icons.Material.Filled.Link" Expanded="true">
+                <MudNavLink Href="https://bigfloat.org" Target="_blank" Icon="@Icons.Material.Filled.Science">
+                    BigFloat Library
+                    <MudIcon Icon="@Icons.Material.Filled.OpenInNew" Size="Size.Small" Class="ml-1" />
+                </MudNavLink>
+                <MudNavLink Href="https://github.com/SunsetQuest/BigCalculator" Target="_blank" Icon="@Icons.Custom.Brands.GitHub">
+                    Source Code
+                    <MudIcon Icon="@Icons.Material.Filled.OpenInNew" Size="Size.Small" Class="ml-1" />
+                </MudNavLink>
+            </MudNavGroup>
+
+            <MudDivider Class="my-2" />
+
+            <MudNavLink Href="/about" Icon="@Icons.Material.Filled.Info" Match="NavLinkMatch.Prefix">About</MudNavLink>
+            <MudNavLink Href="https://ryanwhite.org" Target="_blank" Icon="@Icons.Material.Filled.Person">
+                Developer
+                <MudIcon Icon="@Icons.Material.Filled.OpenInNew" Size="Size.Small" Class="ml-1" />
+            </MudNavLink>
         </MudNavMenu>
     </MudDrawer>
 
