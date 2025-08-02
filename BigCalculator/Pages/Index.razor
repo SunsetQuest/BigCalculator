@@ -650,6 +650,18 @@
 
     void InputABaseSelectClick()
     {
+        BigFloat parsedValue = default;
+
+        // Try to parse current value with current base
+        bool canParse = inputAType switch
+        {
+            Base.Bin => BigFloat.TryParseBinary(inputAString?.Trim() ?? "", out parsedValue),
+            Base.Dec => BigFloat.TryParseDecimal(inputAString?.Trim() ?? "", out parsedValue),
+            Base.Hex => BigFloat.TryParseHex(inputAString?.Trim() ?? "", out parsedValue),
+            _ => false
+        };
+
+        // Change to next base
         inputAType = inputAType switch
         {
             Base.Dec => Base.Hex,
@@ -657,6 +669,26 @@
             Base.Bin => Base.Dec,
             _ => Base.Dec
         };
+
+        if (canParse)
+        {
+            // Convert to new base representation
+            inputAString = inputAType switch
+            {
+                Base.Bin => parsedValue.ToBinaryString(),
+                Base.Dec => parsedValue.ToString(),
+                Base.Hex => parsedValue.ToHexString(),
+                _ => parsedValue.ToString()
+            };
+        }
+        else if (!string.IsNullOrWhiteSpace(inputAString) && inputAString != "0")
+        {
+            // If can't parse and there's content, clear invalid input
+            inputAString = "0";
+        }
+        // If can't parse, leave inputAString unchanged but still change the base type
+
+        // Update icon
         inputATypeIcon = inputAType switch
         {
             Base.Dec => DecIcon,
@@ -664,11 +696,24 @@
             Base.Bin => BinIcon,
             _ => DecIcon
         };
+
         _ = CalculateAsync("");
     }
 
     void InputBBaseSelectClick()
     {
+        BigFloat parsedValue = default;
+
+        // Try to parse current value with current base
+        bool canParse = inputBType switch
+        {
+            Base.Bin => BigFloat.TryParseBinary(inputBString?.Trim() ?? "", out parsedValue),
+            Base.Dec => BigFloat.TryParseDecimal(inputBString?.Trim() ?? "", out parsedValue),
+            Base.Hex => BigFloat.TryParseHex(inputBString?.Trim() ?? "", out parsedValue),
+            _ => false
+        };
+
+        // Change to next base
         inputBType = inputBType switch
         {
             Base.Dec => Base.Hex,
@@ -676,6 +721,26 @@
             Base.Bin => Base.Dec,
             _ => Base.Dec
         };
+
+        if (canParse)
+        {
+            // Convert to new base representation
+            inputBString = inputBType switch
+            {
+                Base.Bin => parsedValue.ToBinaryString(),
+                Base.Dec => parsedValue.ToString(),
+                Base.Hex => parsedValue.ToHexString(),
+                _ => parsedValue.ToString()
+            };
+        }
+        else if (!string.IsNullOrWhiteSpace(inputBString) && inputBString != "0")
+        {
+            // If can't parse and there's content, clear invalid input
+            inputBString = "0";
+        }
+        // If can't parse, leave inputBString unchanged but still change the base type
+
+        // Update icon
         inputBTypeIcon = inputBType switch
         {
             Base.Dec => DecIcon,
@@ -683,11 +748,14 @@
             Base.Bin => BinIcon,
             _ => DecIcon
         };
+
         _ = CalculateAsync("");
     }
 
     void ResultBaseSelectClick()
     {
+        // For results, we can directly use the stored result value for conversion
+        // Change to next base
         resultType = resultType switch
         {
             Base.Dec => Base.Hex,
@@ -695,6 +763,20 @@
             Base.Bin => Base.Dec,
             _ => Base.Dec
         };
+
+        // Convert result to new base representation if we have a valid result
+        if (result != 0 || resultString == "0")
+        {
+            resultString = resultType switch
+            {
+                Base.Bin => result.ToBinaryString(),
+                Base.Dec => result.ToString(),
+                Base.Hex => result.ToHexString(),
+                _ => result.ToString()
+            };
+        }
+
+        // Update icon
         resultTypeIcon = resultType switch
         {
             Base.Dec => DecIcon,
@@ -702,6 +784,8 @@
             Base.Bin => BinIcon,
             _ => DecIcon
         };
-        _ = CalculateAsync("");
+
+        // No need to recalculate for result conversion, just update the display
+        StateHasChanged();
     }
 }
