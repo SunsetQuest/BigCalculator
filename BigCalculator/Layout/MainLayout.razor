@@ -13,16 +13,22 @@
 <MudLayout>
     <MudAppBar>
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+
+        <!-- Beautiful Title Section -->
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="ml-2">
+            <MudIcon Icon="@Icons.Material.Filled.Calculate" Color="Color.Inherit" Size="Size.Medium" />
+            <MudText Typo="Typo.h6" Color="Color.Inherit" Class="fw-bold">
+                BigCalculator.org
+            </MudText>
+            <MudChip T="string" Size="Size.Small" Color="Color.Secondary" Variant="Variant.Outlined" Class="ml-2">
+                <MudText Typo="Typo.caption">Ridiculously Precise</MudText>
+            </MudChip>
+        </MudStack>
+
         <MudSpacer />
         <MudToggleIconButton @bind-Toggled="@_isDarkMode"
                              Icon="@Icons.Material.Filled.DarkMode" Color="@Color.Default" Title="Switch to Dark Mode"
                              ToggledIcon="@Icons.Material.Filled.LightMode" ToggledColor="@Color.Default" ToggledTitle="Switch to Light Mode" />
-        @*        <MudMenu EndIcon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" PositionAtCurser="true" >
-            <MudMenuItem >Login</MudMenuItem>
-            <MudMenuItem>My account</MudMenuItem>
-            <MudMenuItem >Logout</MudMenuItem>
-        </MudMenu>*@
-
     </MudAppBar>
     <MudDrawer @bind-Open="@_drawerOpen">
         <MudNavMenu>
@@ -58,7 +64,6 @@
     </MudMainContent>
 
 </MudLayout>
-
 
 @code {
     // This section is for the left side menu
