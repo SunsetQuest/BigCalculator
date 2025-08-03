@@ -13,9 +13,9 @@
     </MudAlert>
 }
 
-<MudPaper Class="pa-16 ma-2" Elevation="3">
+<MudPaper Class="pa-4 pa-sm-8 pa-md-16 ma-2" Elevation="3">
     <!-- Input A -->
-    <MudPaper Elevation="1" Class="d-flex align-center justify-center ma-4">
+    <MudPaper Elevation="1" Class="d-flex align-center justify-center ma-2 ma-md-4">
         <MudTextField Lines="3"
                       OnDebounceIntervalElapsed="CalculateAsync"
                       DebounceInterval="500"
@@ -36,7 +36,7 @@
     @if (NeedsB)
     {
         <!-- Input B -->
-        <MudPaper Elevation="1" Class="d-flex align-center justify-center ma-4">
+        <MudPaper Elevation="1" Class="d-flex align-center justify-center ma-2 ma-md-4">
             <MudTextField Lines="3"
                           OnDebounceIntervalElapsed="CalculateAsync"
                           DebounceInterval="500"
@@ -55,60 +55,66 @@
         </MudPaper>
     }
 
-    <!-- Operations Section -->
-    <MudPaper Elevation="1" Class="d-flex align-center justify-center ma-4">
-        <!-- Basic Operations Toggle Group -->
-        <div class="flex-grow-1">
-            <MudToggleGroup T="Op" @bind-Value="op" 
-                            Color="Color.Primary" 
-                            SelectionMode="SelectionMode.SingleSelection"
-                            Rounded="true"
-                            Size="Size.Large">
-                @foreach (var val in Enum.GetValues<Op>()[..5])
-                {
-                    <MudToggleItem Value="val" Text="@OpSymb[(int)val]" />
-                }
-            </MudToggleGroup>
-        </div>
+    <!-- Operations Section - Improved Responsive Layout -->
+    <MudPaper Elevation="1" Class="pa-3 ma-2 ma-md-4">
+        <MudGrid Spacing="2" AlignItems="Center">
+            <!-- Basic Operations Toggle Group -->
+            <MudItem xs="12" sm="6" md="7" lg="8" Class="d-flex align-center">
+                <MudToggleGroup T="Op" @bind-Value="op" 
+                                Color="Color.Primary" 
+                                SelectionMode="SelectionMode.SingleSelection"
+                                Rounded="true"
+                                Size="Size.Large"
+                                Class="w-100">
+                    @foreach (var val in Enum.GetValues<Op>()[..5])
+                    {
+                        <MudToggleItem Value="val" Text="@OpSymb[(int)val]" />
+                    }
+                </MudToggleGroup>
+            </MudItem>
 
-        <!-- Advanced Operations Select -->
-        <div class="flex-shrink-0" style="width: 20%; min-width: 150px;">
-            <MudSelect T="Op"
-                       @bind-Value="op"
-                       Dense="false"
-                       Variant="Variant.Outlined"
-                       Label="More Operations"
-                       AnchorOrigin="Origin.BottomCenter">
-                @foreach (var val in Enum.GetValues<Op>()[5..])
-                {
-                    <MudSelectItem Value="val">@($"{OpSymb[(int)val]}")</MudSelectItem>
-                }
-            </MudSelect>
-        </div>
+            <!-- Advanced Operations Select -->
+            <MudItem xs="6" sm="3" md="2" lg="2" Class="d-flex align-center">
+                <MudSelect T="Op"
+                           @bind-Value="op"
+                           Dense="false"
+                           Variant="Variant.Outlined"
+                           Label="More Operations"
+                           AnchorOrigin="Origin.BottomCenter"
+                           Class="w-100">
+                    @foreach (var val in Enum.GetValues<Op>()[5..])
+                    {
+                        <MudSelectItem Value="val">@($"{OpSymb[(int)val]}")</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
 
-        <!-- Processing Indicator -->
-        @if (_processing)
-        {
-            <MudProgressCircular Color="Color.Primary" Size="Size.Small" Indeterminate="true" />
-        }
+            <!-- Precision Control -->
+            <MudItem xs="6" sm="3" md="2" lg="2" Class="d-flex align-center">
+                <MudTextField @bind-Value="userRequestedPrecision"
+                              Label="Precision"
+                              Variant="Variant.Outlined"
+                              Adornment="Adornment.End"
+                              AdornmentText="bits"
+                              Immediate="true"
+                              OnKeyUp="@(async (e) => { if (e.Key == "Enter") await CalculateAsync(""); })"
+                              Error="@(userRequestedPrecision < 1 || userRequestedPrecision > 100000)"
+                              ErrorText="@(userRequestedPrecision < 0 || userRequestedPrecision > 100000 ? "Precision must be 0 for auto or 1-100000 bits" : "")"
+                              Class="w-100" />
+            </MudItem>
 
-        <!-- Precision Control Section -->
-        <MudItem xs="12" sm="2">
-            <MudTextField @bind-Value="userRequestedPrecision"
-                            Label="Precision"
-                            Variant="Variant.Outlined"
-                            Adornment="Adornment.End"
-                            AdornmentText="bits"
-                            Immediate="true"
-                            OnKeyUp="@(async (e) => { if (e.Key == "Enter") await CalculateAsync(""); })"
-                            Error="@(userRequestedPrecision < 1 || userRequestedPrecision > 100000)"
-                            ErrorText="@(userRequestedPrecision < 0 || userRequestedPrecision > 100000 ? "Precision must be 0 for auto or 1-100000 bits" : "")" />
-        </MudItem>
-
+            <!-- Processing Indicator -->
+            @if (_processing)
+            {
+                <MudItem xs="12" md="1" Class="d-flex justify-center align-center">
+                    <MudProgressCircular Color="Color.Primary" Size="Size.Small" Indeterminate="true" />
+                </MudItem>
+            }
+        </MudGrid>
     </MudPaper>
 
     <!-- Result -->
-    <MudPaper Elevation="1" Class="d-flex align-center justify-center ma-4">
+    <MudPaper Elevation="1" Class="d-flex align-center justify-center ma-2 ma-md-4">
         <MudTextField Lines="3"
                       @bind-Value="@resultString"
                       HelperText="@GetResultHelperText()"
@@ -131,50 +137,61 @@
     </MudPaper>
 
     <!-- Quick Actions -->
-    <MudPaper Class="pa-4 ma-4" Elevation="1">
-        <MudButtonGroup Variant="Variant.Outlined" Size="Size.Small">
-            <MudButton OnClick="ClearAll" StartIcon="@Icons.Material.Filled.Clear" Color="Color.Warning">
+    <MudPaper Class="pa-3 ma-2 ma-md-4" Elevation="1">
+        <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap" Justify="Justify.Center" Class="d-flex flex-wrap">
+            <MudButton OnClick="ClearAll" StartIcon="@Icons.Material.Filled.Clear" Color="Color.Warning" Size="Size.Small">
                 Clear All
             </MudButton>
-            <MudButton OnClick="SwapInputs" StartIcon="@Icons.Material.Filled.SwapVert" Color="Color.Info" Disabled="@(!NeedsB)">
+            <MudButton OnClick="SwapInputs" StartIcon="@Icons.Material.Filled.SwapVert" Color="Color.Info" Disabled="@(!NeedsB)" Size="Size.Small">
                 Swap A ↔ B
             </MudButton>
-            <MudButton OnClick="CopyResultToA" StartIcon="@Icons.Material.Filled.Input" Color="Color.Primary" Disabled="@(string.IsNullOrEmpty(resultString) || resultString == "Error")">
+            <MudButton OnClick="CopyResultToA" StartIcon="@Icons.Material.Filled.Input" Color="Color.Primary" Disabled="@(string.IsNullOrEmpty(resultString) || resultString == "Error")" Size="Size.Small">
                 Result → A
             </MudButton>
-        </MudButtonGroup>
+        </MudStack>
     </MudPaper>
 </MudPaper>
 
-<!-- Enhanced History Section with Transfer Buttons -->
-<MudPaper Class="pa-16 ma-2" Elevation="3">
+<!-- Enhanced History Section with Better Responsive Layout -->
+<MudPaper Class="pa-4 pa-sm-8 pa-md-16 ma-2" Elevation="3">
     <MudText Typo="Typo.h6" Class="mb-4">Calculation History</MudText>
     <MudStack Reverse="true" Spacing="2">
         @foreach(var (result, index) in resultHistories.Select((r, i) => (r, i)))
         {
-            <MudPaper Class="pa-3 d-flex align-center justify-space-between" Elevation="1">
-                <MudText Class="flex-grow-1 font-monospace">@result</MudText>
-                <MudButtonGroup Variant="Variant.Outlined" Size="Size.Small">
-                    <MudButton StartIcon="@Icons.Material.Filled.Input" 
-                               Color="Color.Primary" 
-                               Size="Size.Small"
-                               OnClick="() => TransferToInputA(result)">
-                        → A
-                    </MudButton>
-                    <MudButton StartIcon="@Icons.Material.Filled.Input" 
-                               Color="Color.Secondary" 
-                               Size="Size.Small"
-                               OnClick="() => TransferToInputB(result)"
-                               Disabled="@(!NeedsB)">
-                        → B
-                    </MudButton>
-                    <MudButton StartIcon="@Icons.Material.Filled.Delete" 
-                               Color="Color.Error" 
-                               Size="Size.Small"
-                               OnClick="() => RemoveFromHistory(index)">
-                        ×
-                    </MudButton>
-                </MudButtonGroup>
+            <MudPaper Class="pa-3" Elevation="1">
+                <MudGrid AlignItems="Center" Spacing="2">
+                    <MudItem xs="12" sm="8" md="9">
+                        <MudText Class="font-monospace text-truncate" Style="overflow-wrap: break-word; word-break: break-all; font-size: 0.875rem;">
+                            @result
+                        </MudText>
+                    </MudItem>
+                    <MudItem xs="12" sm="4" md="3">
+                        <MudStack Row="true" Spacing="1" Justify="Justify.FlexEnd" Class="flex-wrap">
+                            <MudButton StartIcon="@Icons.Material.Filled.Input" 
+                                       Color="Color.Primary" 
+                                       Size="Size.Small"
+                                       Variant="Variant.Outlined"
+                                       OnClick="() => TransferToInputA(result)">
+                                → A
+                            </MudButton>
+                            <MudButton StartIcon="@Icons.Material.Filled.Input" 
+                                       Color="Color.Secondary" 
+                                       Size="Size.Small"
+                                       Variant="Variant.Outlined"
+                                       OnClick="() => TransferToInputB(result)"
+                                       Disabled="@(!NeedsB)">
+                                → B
+                            </MudButton>
+                            <MudButton StartIcon="@Icons.Material.Filled.Delete" 
+                                       Color="Color.Error" 
+                                       Size="Size.Small"
+                                       Variant="Variant.Outlined"
+                                       OnClick="() => RemoveFromHistory(index)">
+                                ×
+                            </MudButton>
+                        </MudStack>
+                    </MudItem>
+                </MudGrid>
             </MudPaper>
         }
         @if (!resultHistories.Any())
@@ -253,6 +270,24 @@
     .mud-toggle-group .mud-toggle-item {
         min-width: 60px;
         font-weight: 600;
+    }
+
+    /* Mobile styles - using class-based approach instead of media queries */
+    .mobile-small-text .mud-input-large .mud-input-control {
+        font-size: 0.95em;
+    }
+    
+    .mobile-small-text .font-monospace {
+        font-size: 0.8rem !important;
+    }
+    
+    .mobile-wrap .mud-toggle-group {
+        flex-wrap: wrap;
+    }
+    
+    .mobile-wrap .mud-toggle-group .mud-toggle-item {
+        min-width: 50px;
+        margin: 2px;
     }
 </style>
 
