@@ -2,6 +2,10 @@
 @using System.Numerics;
 @using System.Text.RegularExpressions
 @using BigFloatLibrary;
+@using MudBlazor.Internal
+
+@inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
 
 <PageTitle>Big Number Calculator</PageTitle>
 
@@ -648,11 +652,39 @@
         }
     }
 
+
+
+    // Replace the existing CopyResultToClipboard method
     private async Task CopyResultToClipboard()
     {
-        // This would require JS interop in a real implementation
-        // For now, just show a temporary success indicator
-        StateHasChanged();
+        if (string.IsNullOrEmpty(resultString) || resultString == "Error")
+        {
+            Snackbar.Add("No valid result to copy", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            // Modern clipboard API (preferred)
+            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", resultString);
+            Snackbar.Add("Result copied to clipboard!", Severity.Success);
+        }
+        catch (JSException)
+        {
+            try
+            {
+                // Fallback for older browsers
+                await JSRuntime.InvokeVoidAsync("fallbackCopyToClipboard", resultString);
+                Snackbar.Add("Result copied to clipboard!", Severity.Success);
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Failed to copy: {ex.Message}", Severity.Error);
+            }
+        }
+
+        // StateHasChanged() not needed here since we're not modifying component state
+        // The snackbar notifications handle user feedback
     }
 
     // Base conversion icons and handlers
