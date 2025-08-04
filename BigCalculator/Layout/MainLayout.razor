@@ -27,8 +27,8 @@
 
         <MudSpacer />
         <MudToggleIconButton @bind-Toggled="@_isDarkMode"
-                             Icon="@Icons.Material.Filled.DarkMode" Color="@Color.Default" Title="Switch to Dark Mode"
-                             ToggledIcon="@Icons.Material.Filled.LightMode" ToggledColor="@Color.Default" ToggledTitle="Switch to Light Mode" />
+                             Icon="@Icons.Material.Filled.DarkMode" Color="@Color.Default" title="@(_isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode")"
+                             ToggledIcon="@Icons.Material.Filled.LightMode" ToggledColor="@Color.Default" />
     </MudAppBar>
     <MudDrawer @bind-Open="@_drawerOpen">
         <MudNavMenu>
