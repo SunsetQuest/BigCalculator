@@ -118,35 +118,26 @@
     </MudPaper>
 
     <!-- Result -->
-    <MudPaper Elevation="1" Class="ma-2 ma-md-4" Style="position: relative;">
-        <MudGrid AlignItems="Center" Spacing="0">
-            <MudItem xs="11">
-                <MudTextField Lines="3"
-                              @bind-Value="@resultString"
-                              HelperText="@GetResultHelperText()"
-                              Label="Result"
-                              Variant="Variant.Filled"
-                              ReadOnly="true"
-                              Class="mud-input-large result-field">
-                </MudTextField>
-            </MudItem>
-            <MudItem xs="1" Class="d-flex justify-center align-center" Style="height: 100%;">
-                <MudStack Spacing="0" Style="gap: 1px;" AlignItems="AlignItems.Center">
-                    <MudIconButton Icon="@Icons.Material.Filled.ContentCopy"
-                                   OnClick="CopyResultToClipboard"
-                                   Title="Copy to clipboard"
-                                   Size="Size.Small"
-                                   Style="width: 24px; height: 24px; min-height: 24px;" />
-                    <MudButton Variant="Variant.Text"
-                               OnClick="ResultBaseSelectClick"
-                               Title="Change base format"
-                               Size="Size.Small"
-                               Style="width: 24px; height: 24px; min-height: 24px; padding: 2px;">
-                        @((MarkupString)resultTypeIcon)
-                    </MudButton>
-                </MudStack>
-            </MudItem>
-        </MudGrid>
+    <MudPaper Elevation="1" Class="d-flex align-center justify-center ma-2 ma-md-4">
+        <MudTextField Lines="3"
+                      @bind-Value="@resultString"
+                      HelperText="@GetResultHelperText()"
+                      Label="Result"
+                      Variant="Variant.Filled"
+                      Adornment="Adornment.End"
+                      AdornmentIcon="@resultTypeIcon"
+                      OnAdornmentClick="ResultBaseSelectClick"
+                      AdornmentAriaLabel="Select Base"
+                      ReadOnly="true"
+                      Class="mud-input-large result-field">
+            <MudInputAdornment End="true">
+                <MudIconButton Icon="@Icons.Material.Filled.ContentCopy"
+                               OnClick="CopyResultToClipboard"
+                               Title="Copy to clipboard"
+                               Size="Size.Small" />
+                @resultTypeIcon
+            </MudInputAdornment>
+        </MudTextField>
     </MudPaper>
 
     <!-- Quick Actions -->
