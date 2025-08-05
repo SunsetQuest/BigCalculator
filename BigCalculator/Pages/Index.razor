@@ -63,9 +63,9 @@
     <MudPaper Elevation="1" Class="pa-3 ma-2 ma-md-4">
         <MudGrid Spacing="2" AlignItems="Center">
             <!-- Basic Operations Toggle Group -->
-            <MudItem xs="12" sm="6" md="7" lg="8" Class="d-flex align-center">
-                <MudToggleGroup T="Op" @bind-Value="op" 
-                                Color="Color.Primary" 
+            <MudItem xs="12" sm="8" md="7" lg="8" Class="d-flex align-center">
+                <MudToggleGroup T="Op" @bind-Value="op"
+                                Color="Color.Primary"
                                 SelectionMode="SelectionMode.SingleSelection"
                                 Rounded="true"
                                 Size="Size.Large"
@@ -78,7 +78,7 @@
             </MudItem>
 
             <!-- Advanced Operations Select -->
-            <MudItem xs="6" sm="3" md="2" lg="2" Class="d-flex align-center">
+            <MudItem xs="12" sm="4" md="2" lg="2" Class="d-flex align-center">
                 <MudSelect T="Op"
                            @bind-Value="op"
                            Dense="false"
@@ -94,17 +94,33 @@
             </MudItem>
 
             <!-- Precision Control -->
-            <MudItem xs="6" sm="3" md="2" lg="2" Class="d-flex align-center">
-                <MudTextField @bind-Value="userRequestedPrecision"
-                              Label="Precision"
-                              Variant="Variant.Outlined"
-                              Adornment="Adornment.End"
-                              AdornmentText="bits"
-                              Immediate="true"
-                              OnKeyUp="@(async (e) => { if (e.Key == "Enter") await CalculateAsync(""); })"
-                              Error="@(userRequestedPrecision < 1 || userRequestedPrecision > 100000)"
-                              ErrorText="@(userRequestedPrecision < 0 || userRequestedPrecision > 100000 ? "Precision must be 0 for auto or 1-100000 bits" : "")"
-                              Class="w-100" />
+            <MudItem xs="12" sm="4" md="3" lg="2" Class="d-flex align-center">
+                <MudSelect T="string"
+                           @bind-Value="precisionMode"
+                           @bind-Value:after="@(() => _ = CalculateAsync(""))"
+                           Label="Precision"
+                           Variant="Variant.Outlined"
+                           Dense="true"
+                           Class="w-100">
+                           <!--HelperText="@GetPrecisionHelperText()"> -->
+                    @foreach (var option in precisionOptions)
+                    {
+                        <MudSelectItem Value="option">
+                            <MudTooltip Text="@GetPrecisionTooltip(option)" Placement="Placement.Left">
+                                <span>
+                                    @if (option.StartsWith("Auto"))
+                                    {
+                                        @option
+                                    }
+                                    else
+                                    {
+                                        @(option.EndsWith("M") ? option : $"{option} bits")
+                                    }
+                                </span>
+                            </MudTooltip>
+                        </MudSelectItem>
+                    }
+                </MudSelect>
             </MudItem>
 
             <!-- Processing Indicator -->
@@ -118,26 +134,35 @@
     </MudPaper>
 
     <!-- Result -->
-    <MudPaper Elevation="1" Class="d-flex align-center justify-center ma-2 ma-md-4">
-        <MudTextField Lines="3"
-                      @bind-Value="@resultString"
-                      HelperText="@GetResultHelperText()"
-                      Label="Result"
-                      Variant="Variant.Filled"
-                      Adornment="Adornment.End"
-                      AdornmentIcon="@resultTypeIcon"
-                      OnAdornmentClick="ResultBaseSelectClick"
-                      AdornmentAriaLabel="Select Base"
-                      ReadOnly="true"
-                      Class="mud-input-large result-field">
-            <MudInputAdornment End="true">
-                <MudIconButton Icon="@Icons.Material.Filled.ContentCopy"
-                               OnClick="CopyResultToClipboard"
-                               Title="Copy to clipboard"
-                               Size="Size.Small" />
-                @resultTypeIcon
-            </MudInputAdornment>
-        </MudTextField>
+    <MudPaper Elevation="1" Class="ma-2 ma-md-4" Style="position: relative;">
+        <MudGrid AlignItems="Center" Spacing="0">
+            <MudItem xs="11">
+                <MudTextField Lines="3"
+                              @bind-Value="@resultString"
+                              HelperText="@GetResultHelperText()"
+                              Label="Result"
+                              Variant="Variant.Filled"
+                              ReadOnly="true"
+                              Class="mud-input-large result-field">
+                </MudTextField>
+            </MudItem>
+            <MudItem xs="1" Class="d-flex justify-center align-center" Style="height: 100%;">
+                <MudStack Spacing="0" Style="gap: 1px;" AlignItems="AlignItems.Center">
+                    <MudIconButton Icon="@Icons.Material.Filled.ContentCopy"
+                                   OnClick="CopyResultToClipboard"
+                                   Title="Copy to clipboard"
+                                   Size="Size.Small"
+                                   Style="width: 24px; height: 24px; min-height: 24px;" />
+                    <MudButton Variant="Variant.Text"
+                               OnClick="ResultBaseSelectClick"
+                               Title="Change base format"
+                               Size="Size.Small"
+                               Style="width: 24px; height: 24px; min-height: 24px; padding: 2px;">
+                        @((MarkupString)resultTypeIcon)
+                    </MudButton>
+                </MudStack>
+            </MudItem>
+        </MudGrid>
     </MudPaper>
 
     <!-- Quick Actions -->
@@ -160,7 +185,7 @@
 <MudPaper Class="pa-4 pa-sm-8 pa-md-16 ma-2" Elevation="3">
     <MudText Typo="Typo.h6" Class="mb-4">Calculation History</MudText>
     <MudStack Reverse="true" Spacing="2">
-        @foreach(var (result, index) in resultHistories.Select((r, i) => (r, i)))
+        @foreach (var (result, index) in resultHistories.Select((r, i) => (r, i)))
         {
             <MudPaper Class="pa-3" Elevation="1">
                 <MudGrid AlignItems="Center" Spacing="2">
@@ -171,23 +196,23 @@
                     </MudItem>
                     <MudItem xs="12" sm="4" md="3">
                         <MudStack Row="true" Spacing="1" Justify="Justify.FlexEnd" Class="flex-wrap">
-                            <MudButton StartIcon="@Icons.Material.Filled.Input" 
-                                       Color="Color.Primary" 
+                            <MudButton StartIcon="@Icons.Material.Filled.Input"
+                                       Color="Color.Primary"
                                        Size="Size.Small"
                                        Variant="Variant.Outlined"
                                        OnClick="() => TransferToInputA(result)">
                                 → A
                             </MudButton>
-                            <MudButton StartIcon="@Icons.Material.Filled.Input" 
-                                       Color="Color.Secondary" 
+                            <MudButton StartIcon="@Icons.Material.Filled.Input"
+                                       Color="Color.Secondary"
                                        Size="Size.Small"
                                        Variant="Variant.Outlined"
                                        OnClick="() => TransferToInputB(result)"
                                        Disabled="@(!NeedsB)">
                                 → B
                             </MudButton>
-                            <MudButton StartIcon="@Icons.Material.Filled.Delete" 
-                                       Color="Color.Error" 
+                            <MudButton StartIcon="@Icons.Material.Filled.Delete"
+                                       Color="Color.Error"
                                        Size="Size.Small"
                                        Variant="Variant.Outlined"
                                        OnClick="() => RemoveFromHistory(index)">
@@ -212,14 +237,35 @@
     List<string> resultHistories = new List<string>();
 
     // Precision Control Variables
-    private int userRequestedPrecision = 64;
+    private string precisionMode = "Auto";
+    private readonly List<string> precisionOptions = new List<string>
+    {
+        "Auto",
+        "Auto-Full",
+        "16",
+        "32",
+        "64",
+        "128",
+        "256",
+        "512",
+        "1024",
+        "2048",
+        "4096",
+        "16384",
+        "65536",
+        "256144",
+        "1M",
+        "4M",
+        "16M",
+        "64M"
+    };
 
 
     // UI Action Methods
 
     private void TransferToInputA(string value)
     {
-        // Lets transfer anything after the "=" in value to inputAString 
+        // Lets transfer anything after the "=" in value to inputAString
         inputAString = value.Split('=').Last().Trim();
 
         _ = CalculateAsync("");
@@ -245,13 +291,6 @@
             StateHasChanged();
         }
     }
-
-    private void SetPrecision(int precision)
-    {
-        userRequestedPrecision = precision;
-        _ = CalculateAsync("");
-        StateHasChanged();
-    }
 }
 
 
@@ -260,17 +299,17 @@
         font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
         font-size: 1.1em;
     }
-    
+
     .result-field .mud-input-control {
         background-color: var(--mud-palette-background-grey);
         font-weight: 500;
     }
-    
+
     .history-item:hover {
         background-color: var(--mud-palette-action-hover);
         transition: background-color 0.2s ease;
     }
-    
+
     .mud-toggle-group .mud-toggle-item {
         min-width: 60px;
         font-weight: 600;
@@ -280,19 +319,19 @@
     .mobile-small-text .mud-input-large .mud-input-control {
         font-size: 0.95em;
     }
-    
+
     .mobile-small-text .font-monospace {
         font-size: 0.8rem !important;
     }
-    
+
     .mobile-wrap .mud-toggle-group {
         flex-wrap: wrap;
     }
-    
-    .mobile-wrap .mud-toggle-group .mud-toggle-item {
-        min-width: 50px;
-        margin: 2px;
-    }
+
+        .mobile-wrap .mud-toggle-group .mud-toggle-item {
+            min-width: 50px;
+            margin: 2px;
+        }
 </style>
 
 @code {
@@ -324,7 +363,7 @@
     }
 
     string[] OpSymb = [
-        "+", "-", "×", "÷", 
+        "+", "-", "×", "÷",
         "^", "∜", "√", "log₂", "log₁₀", "ln", "eˣ",
         "|x|", "±", "<<", ">>",
         "sin", "cos", "tan"];
@@ -334,8 +373,9 @@
     private Op op
     {
         get { return _op; }
-        set { 
-            _op = value; 
+        set
+        {
+            _op = value;
             _ = CalculateAsync("");
         }
     }
@@ -465,23 +505,92 @@
 
     private void ApplyPrecisionControl()
     {
+        // Parse precision mode to get the numeric value if it's a fixed precision
+        int? fixedPrecision = GetFixedPrecisionValue(precisionMode);
+
+        if (fixedPrecision.HasValue)
+        {
+            // Fixed precision mode
+            int precisionBits = fixedPrecision.Value;
+
             // Apply precision based on operation type
             if (_op is Op.Add or Op.Sub)
             {
                 // For Add/Sub operations, we work with accuracy
-                if (inputA.Accuracy < userRequestedPrecision)
-                    inputA = BigFloat.ExtendPrecision(inputA, userRequestedPrecision - inputA.Accuracy);
-                if (NeedsB && inputB.Accuracy < userRequestedPrecision)
-                    inputB = BigFloat.ExtendPrecision(inputB, userRequestedPrecision - inputB.Accuracy);  // SetAccuracy(inputB, manualPrecision);
+                if (inputA.Accuracy < precisionBits)
+                    inputA = BigFloat.ExtendPrecision(inputA, precisionBits - inputA.Accuracy);
+                if (NeedsB && inputB.Accuracy < precisionBits)
+                    inputB = BigFloat.ExtendPrecision(inputB, precisionBits - inputB.Accuracy);
             }
             else
             {
                 // For Mul/Div/Pow operations, we work with precision
-                if (inputA.Precision < userRequestedPrecision)
-                    inputA = BigFloat.SetPrecision(inputA, userRequestedPrecision);
-                if (NeedsB && inputB.Precision < userRequestedPrecision)
-                    inputB = BigFloat.SetPrecision(inputB, userRequestedPrecision);
+                if (inputA.Precision < precisionBits)
+                    inputA = BigFloat.SetPrecision(inputA, precisionBits);
+                if (NeedsB && inputB.Precision < precisionBits)
+                    inputB = BigFloat.SetPrecision(inputB, precisionBits);
             }
+        }
+        else if (precisionMode == "Auto")
+        {
+            // Auto mode with special integer handling
+            bool aIsInteger = inputA.IsInteger;
+            bool bIsInteger = NeedsB ? inputB.IsInteger : false;
+
+            if (NeedsB && aIsInteger && bIsInteger)
+            {
+                // Both are integers - keep as exact integers
+                // BigFloat should handle this naturally
+            }
+            else if (NeedsB && (aIsInteger || bIsInteger))
+            {
+                // One is integer, one is not - match precision of non-integer
+                if (aIsInteger && !bIsInteger)
+                {
+                    // A is integer, B is not - match A's precision to B's
+                    inputA = BigFloat.SetPrecision(inputA, inputB.Precision);
+                }
+                else if (!aIsInteger && bIsInteger)
+                {
+                    // B is integer, A is not - match B's precision to A's
+                    inputB = BigFloat.SetPrecision(inputB, inputA.Precision);
+                }
+            }
+            // Otherwise let BigFloat use its default precision handling
+        }
+        else if (precisionMode == "Auto-Full")
+        {
+            // Match the longer input's precision
+            if (NeedsB)
+            {
+                int maxPrecision = Math.Max(inputA.Precision, inputB.Precision);
+
+                if (inputA.Precision < maxPrecision)
+                    inputA = BigFloat.SetPrecision(inputA, maxPrecision);
+                if (inputB.Precision < maxPrecision)
+                    inputB = BigFloat.SetPrecision(inputB, maxPrecision);
+            }
+            // For single-input operations, keep the existing precision
+        }
+    }
+
+    private int? GetFixedPrecisionValue(string mode)
+    {
+        if (mode == "Auto" || mode == "Auto-Full")
+            return null;
+
+        if (mode.EndsWith("M"))
+        {
+            // Handle megabit values
+            if (int.TryParse(mode.TrimEnd('M'), out int megabits))
+                return megabits * 1024 * 1024;
+        }
+        else if (int.TryParse(mode, out int bits))
+        {
+            return bits;
+        }
+
+        return null;
     }
 
     private BigFloat ValidateDivision(BigFloat a, BigFloat b)
@@ -591,20 +700,46 @@
     private string GetResultHelperText()
     {
         if (result == 0 || hasCalculationError) return $"{resultType} format";
-        return $"Bits: {result.Size} | Precision: {result.Precision} | Accuracy: {result.Accuracy} | Scale: {result.Scale} | BinExp: {result.BinaryExponent}{(result.IsInteger ? "| IsInteger" : "")}{(result.FitsInADouble() ? "| FitsInADouble" : "")}{(result.IsOneBitFollowedByZeroBits ? "| IsOneBitFollowedByZeroBits" : "")}";
+
+        string baseInfo = $"Bits: {result.Size} | Precision: {result.Precision} | Accuracy: {result.Accuracy} | Scale: {result.Scale} | BinExp: {result.BinaryExponent}";
+        string flags = $"{(result.IsInteger ? "| IsInteger" : "")}{(result.FitsInADouble() ? "| FitsInADouble" : "")}{(result.IsOneBitFollowedByZeroBits ? "| IsOneBitFollowedByZeroBits" : "")}";
+        string modeInfo = $" | Mode: {precisionMode}";
+
+        return baseInfo + flags + modeInfo;
+    }
+
+    private string GetPrecisionHelperText()
+    {
+        return precisionMode switch
+        {
+            "Auto" => "Automatic precision with smart integer handling",
+            "Auto-Full" => "Match precision of the longer input",
+            _ => "Fixed precision mode"
+        };
+    }
+
+    private string GetPrecisionTooltip(string option)
+    {
+        return option switch
+        {
+            "Auto" => "Automatic precision. Integers are treated as exact when mixed with decimals.",
+            "Auto-Full" => "Result precision matches the input with higher precision.",
+            _ when option.EndsWith("M") => $"Fixed {option} ({int.Parse(option.TrimEnd('M')) * 1024 * 1024:N0} bits)",
+            _ => $"Fixed {option}-bit precision"
+        };
     }
 
     private string ExtractResultValue(string historyEntry)
     {
         var equalIndex = historyEntry.LastIndexOf(" = ");
         if (equalIndex == -1) return "";
-        
+
         var resultPart = historyEntry.Substring(equalIndex + 3);
         // Remove precision info [...]
         var bracketIndex = resultPart.LastIndexOf(" [");
         if (bracketIndex != -1)
             resultPart = resultPart.Substring(0, bracketIndex);
-            
+
         // Remove base prefixes
         if (resultPart.StartsWith("0b")) return resultPart.Substring(2);
         if (resultPart.StartsWith("0x")) return resultPart.Substring(2);
