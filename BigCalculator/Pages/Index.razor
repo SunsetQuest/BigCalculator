@@ -115,7 +115,7 @@
                     }
                 </MudSelect>
             </MudItem>
-
+            
             <!-- Processing Indicator -->
             @if (_processing)
             {
@@ -234,7 +234,7 @@
     private readonly List<string> precisionOptions = new List<string>
     {
         "Auto",
-        "Auto-Full",
+        "Full",
         "16",
         "32",
         "64",
@@ -552,7 +552,7 @@
             }
             // Otherwise let BigFloat use its default precision handling
         }
-        else if (precisionMode == "Auto-Full")
+        else if (precisionMode == "Full")
         {
             // Match the longer input's precision
             if (NeedsB)
@@ -570,7 +570,7 @@
 
     private int? GetFixedPrecisionValue(string mode)
     {
-        if (mode == "Auto" || mode == "Auto-Full")
+        if (mode == "Auto" || mode == "Full")
             return null;
         if (mode.EndsWith("K"))
         {
@@ -712,7 +712,7 @@
         return precisionMode switch
         {
             "Auto" => "Automatic precision with smart integer handling",
-            "Auto-Full" => "Match precision of the longer input",
+            "Full" => "Match precision of the longer input",
             _ => "Fixed precision mode"
         };
     }
