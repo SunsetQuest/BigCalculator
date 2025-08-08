@@ -108,14 +108,7 @@
                         <MudSelectItem Value="option">
                             <MudTooltip Text="@GetPrecisionTooltip(option)" Placement="Placement.Left">
                                 <span>
-                                    @if (option.StartsWith("Auto"))
-                                    {
-                                        @option
-                                    }
-                                    else
-                                    {
-                                        @(option.EndsWith("M") ? option : $"{option} bits")
-                                    }
+                                    @(char.IsLetter(option[0]) || option.Length > 4 ? option : $"{option} bits")
                                 </span>
                             </MudTooltip>
                         </MudSelectItem>
@@ -251,13 +244,14 @@
         "1024",
         "2048",
         "4096",
-        "16384",
-        "65536",
-        "256144",
-        "1M",
-        "4M",
-        "16M",
-        "64M"
+        "8192",
+        "16K",
+        "32K",
+        "64K",
+        "128K",
+        "256K",
+        "512K",
+        "1M"
     };
 
 
@@ -578,8 +572,13 @@
     {
         if (mode == "Auto" || mode == "Auto-Full")
             return null;
-
-        if (mode.EndsWith("M"))
+        if (mode.EndsWith("K"))
+        {
+            // Handle kilobit values
+            if (int.TryParse(mode.TrimEnd('K'), out int kilobits))
+                return kilobits * 1024;
+        }
+        else if (mode.EndsWith("M"))
         {
             // Handle megabit values
             if (int.TryParse(mode.TrimEnd('M'), out int megabits))
@@ -723,7 +722,8 @@
         return option switch
         {
             "Auto" => "Automatic precision. Integers are treated as exact when mixed with decimals.",
-            "Auto-Full" => "Result precision matches the input with higher precision.",
+            "Full" => "Result precision matches the input with higher precision.",
+            _ when option.EndsWith("K") => $"Fixed {option} ({int.Parse(option.TrimEnd('K')) * 1024:N0} bits)",
             _ when option.EndsWith("M") => $"Fixed {option} ({int.Parse(option.TrimEnd('M')) * 1024 * 1024:N0} bits)",
             _ => $"Fixed {option}-bit precision"
         };
