@@ -101,6 +101,7 @@
                            Label="Precision"
                            Variant="Variant.Outlined"
                            Dense="true"
+                           Onchange="() => _ = CalculateAsync(precisionMode)"
                            Class="w-100">
                            <!--HelperText="@GetPrecisionHelperText()"> -->
                     @foreach (var option in precisionOptions)
