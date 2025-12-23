@@ -492,7 +492,10 @@
             return;
 
         _calculationCts?.Cancel();
+        _calculationSequence++;
         _processingSecondsRemaining = 0;
+        SetCancellationMessage(true);
+        _processing = false;
         StateHasChanged();
     }
 
