@@ -17,6 +17,22 @@
     </MudAlert>
 }
 
+<MudOverlay Visible="@_processing" DarkBackground="true">
+    <MudPaper Elevation="6" Class="pa-6" Style="max-width: 360px;">
+        <MudStack Spacing="2" AlignItems="AlignItems.Center">
+            <MudText Typo="Typo.h6">Processing calculation</MudText>
+            <MudText Typo="Typo.body2" Align="Align.Center">
+                Running on your device. You can cancel if this takes too long.
+            </MudText>
+            <MudProgressCircular Color="Color.Primary" Size="Size.Medium" Indeterminate="true" />
+            <MudText Typo="Typo.subtitle2">Time remaining: @_processingSecondsRemaining s</MudText>
+            <MudButton Color="Color.Error" Variant="Variant.Filled" OnClick="CancelCalculation">
+                Cancel
+            </MudButton>
+        </MudStack>
+    </MudPaper>
+</MudOverlay>
+
 <MudPaper Class="pa-4 pa-sm-8 pa-md-16 ma-2" Elevation="3">
     <!-- Input A -->
     <MudPaper Elevation="1" Class="d-flex align-center justify-center ma-2 ma-md-4">
@@ -331,6 +347,10 @@
 
 @code {
     private bool _processing = false;
+    private const int CalculationTimeoutSeconds = 5;
+    private int _processingSecondsRemaining = CalculationTimeoutSeconds;
+    private CancellationTokenSource? _calculationCts;
+    private int _calculationSequence = 0;
     private string errorMessage = "";
     private bool hasCalculationError = false;
 
@@ -391,117 +411,254 @@
 
     private async Task CalculateAsync(string debouncedText)
     {
-        if (_processing) return;
+        if (_processing)
+        {
+            CancelCalculation();
+            return;
+        }
 
         _processing = true;
-        StateHasChanged();
+        _processingSecondsRemaining = CalculationTimeoutSeconds;
+        var calculationId = ++_calculationSequence;
+        _calculationCts?.Cancel();
+        _calculationCts?.Dispose();
+        _calculationCts = new CancellationTokenSource();
 
-        await Task.Delay(50); // Small delay for UI responsiveness
-        Calculate();
-    }
+        var snapshot = new CalculationSnapshot(
+            inputAString,
+            inputBString,
+            inputAType,
+            inputBType,
+            resultType,
+            _op,
+            precisionMode);
 
-    private void Calculate()
-    {
-        errorMessage = "";
-        hasCalculationError = false;
+        await InvokeAsync(StateHasChanged);
+        await Task.Yield();
+
+        await Task.Delay(50);
+
+        using var countdownCts = new CancellationTokenSource();
+        var countdownTask = RunCountdownAsync(countdownCts.Token);
+        var calculationTask = Task.Factory.StartNew(
+            () => CalculateCore(snapshot, _calculationCts.Token),
+            _calculationCts.Token,
+            TaskCreationOptions.LongRunning,
+            TaskScheduler.Default);
+        _ = calculationTask.ContinueWith(task => _ = task.Exception, TaskContinuationOptions.OnlyOnFaulted);
 
         try
         {
-            // Parse Input A with improved error handling
-            bool inputAValid = inputAType switch
-            {
-                Base.Bin => BigFloat.TryParseBinary(inputAString?.Trim() ?? "", out inputA),
-                Base.Dec => BigFloat.TryParseDecimal(inputAString?.Trim() ?? "", out inputA),
-                Base.Hex => BigFloat.TryParseHex(inputAString?.Trim() ?? "", out inputA),
-                _ => false
-            };
+            var timeoutTask = Task.Delay(TimeSpan.FromSeconds(CalculationTimeoutSeconds), _calculationCts.Token);
+            var completedTask = await Task.WhenAny(calculationTask, timeoutTask);
 
-            inputAInvalidFormat = !inputAValid;
-
-            // Parse Input B with improved error handling
-            bool inputBValid = true;
-            if (NeedsB)
+            if (completedTask == calculationTask)
             {
-                inputBValid = inputBType switch
+                try
                 {
-                    Base.Bin => BigFloat.TryParseBinary(inputBString?.Trim() ?? "", out inputB),
-                    Base.Dec => BigFloat.TryParseDecimal(inputBString?.Trim() ?? "", out inputB),
-                    Base.Hex => BigFloat.TryParseHex(inputBString?.Trim() ?? "", out inputB),
-                    _ => false
-                };
-
-                inputBInvalidFormat = !inputBValid;
+                    var calculationResult = await calculationTask;
+                    if (_calculationSequence == calculationId && !_calculationCts.IsCancellationRequested)
+                    {
+                        ApplyCalculationResult(calculationResult);
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    SetCancellationMessage(_calculationCts.IsCancellationRequested);
+                }
             }
             else
             {
-                inputBInvalidFormat = false;
-            }
-
-            if (!inputAValid || (NeedsB && !inputBValid))
-            {
-                resultString = "";
-                return;
-            }
-
-            // Apply precision control logic
-            ApplyPrecisionControl();
-
-            // Perform calculation with domain-specific validations
-            result = _op switch
-            {
-                Op.Add => inputA + inputB,
-                Op.Sub => inputA - inputB,
-                Op.Mul => inputA * inputB,
-                Op.Div => ValidateDivision(inputA, inputB),
-                Op.Pow => ValidatePower(inputA, inputB),
-                Op.Root => ValidateRoot(inputA, inputB),
-                Op.Sqrt => ValidateSquareRoot(inputA),
-                Op.Log2 => ValidateLogarithm(inputA),
-                Op.Abs => BigFloat.Abs(inputA),
-                Op.Neg => -inputA,
-                Op.ShiftRight => ValidateShift(inputA, inputB, false),
-                Op.ShiftLeft => ValidateShift(inputA, inputB, true),
-                _ => throw new NotImplementedException($"Operation {_op} not implemented")
-            };
-
-            // Format result based on selected base
-            resultString = resultType switch
-            {
-                Base.Bin => result.ToBinaryString(),
-                Base.Dec => result.ToString(),
-                Base.Hex => result.ToHexString(),
-                _ => result.ToString()
-            };
-
-            // Add to history only if calculation succeeded
-            if (!hasCalculationError)
-            {
-                var historyEntry = $"{FormatHistoryEntry()}";
-                resultHistories.Insert(0, historyEntry);
-
-                if (resultHistories.Count > 20) // Increased history size
+                var userCanceled = _calculationCts.IsCancellationRequested;
+                if (!userCanceled)
                 {
-                    resultHistories.RemoveAt(resultHistories.Count - 1);
+                    _calculationCts.Cancel();
                 }
+                SetCancellationMessage(userCanceled);
             }
-        }
-        catch (Exception ex)
-        {
-            hasCalculationError = true;
-            errorMessage = $"Calculation error: {ex.Message}";
-            resultString = "Error";
         }
         finally
         {
+            countdownCts.Cancel();
             _processing = false;
-            StateHasChanged();
+            _processingSecondsRemaining = 0;
+            await InvokeAsync(StateHasChanged);
         }
     }
 
-    private void ApplyPrecisionControl()
+    private void CancelCalculation()
+    {
+        if (!_processing)
+            return;
+
+        _calculationCts?.Cancel();
+        _calculationSequence++;
+        _processingSecondsRemaining = 0;
+        SetCancellationMessage(true);
+        _processing = false;
+        StateHasChanged();
+    }
+
+    private async Task RunCountdownAsync(CancellationToken token)
+    {
+        while (_processingSecondsRemaining > 0 && !token.IsCancellationRequested)
+        {
+            try
+            {
+                await Task.Delay(1000, token);
+            }
+            catch (TaskCanceledException)
+            {
+                break;
+            }
+
+            _processingSecondsRemaining = Math.Max(0, _processingSecondsRemaining - 1);
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void SetCancellationMessage(bool userCanceled)
+    {
+        hasCalculationError = true;
+        errorMessage = userCanceled
+            ? "Calculation canceled by user."
+            : $"Calculation timed out after {CalculationTimeoutSeconds} seconds.";
+        resultString = "Canceled";
+    }
+
+    private CalculationResult CalculateCore(CalculationSnapshot snapshot, CancellationToken token)
+    {
+        var calculation = new CalculationResult();
+
+        try
+        {
+            var inputAValue = 0;
+            var inputBValue = 0;
+
+            token.ThrowIfCancellationRequested();
+
+            bool inputAValid = snapshot.InputAType switch
+            {
+                Base.Bin => BigFloat.TryParseBinary(snapshot.InputAString?.Trim() ?? "", out inputAValue),
+                Base.Dec => BigFloat.TryParseDecimal(snapshot.InputAString?.Trim() ?? "", out inputAValue),
+                Base.Hex => BigFloat.TryParseHex(snapshot.InputAString?.Trim() ?? "", out inputAValue),
+                _ => false
+            };
+
+            token.ThrowIfCancellationRequested();
+
+            bool needsB = NeedsBForOperation(snapshot.Operation);
+            bool inputBValid = true;
+
+            if (needsB)
+            {
+                inputBValid = snapshot.InputBType switch
+                {
+                    Base.Bin => BigFloat.TryParseBinary(snapshot.InputBString?.Trim() ?? "", out inputBValue),
+                    Base.Dec => BigFloat.TryParseDecimal(snapshot.InputBString?.Trim() ?? "", out inputBValue),
+                    Base.Hex => BigFloat.TryParseHex(snapshot.InputBString?.Trim() ?? "", out inputBValue),
+                    _ => false
+                };
+            }
+
+            calculation.InputAInvalidFormat = !inputAValid;
+            calculation.InputBInvalidFormat = needsB && !inputBValid;
+            calculation.InputA = inputAValue;
+            calculation.InputB = inputBValue;
+
+            if (!inputAValid || (needsB && !inputBValid))
+            {
+                calculation.ResultString = "";
+                return calculation;
+            }
+
+            ApplyPrecisionControl(ref inputAValue, ref inputBValue, snapshot.PrecisionMode, snapshot.Operation, needsB);
+
+            token.ThrowIfCancellationRequested();
+
+            var resultValue = snapshot.Operation switch
+            {
+                Op.Add => inputAValue + inputBValue,
+                Op.Sub => inputAValue - inputBValue,
+                Op.Mul => inputAValue * inputBValue,
+                Op.Div => ValidateDivision(inputAValue, inputBValue),
+                Op.Pow => ValidatePower(inputAValue, snapshot.InputBString),
+                Op.Root => ValidateRoot(inputAValue, snapshot.InputBString),
+                Op.Sqrt => ValidateSquareRoot(inputAValue),
+                Op.Log2 => ValidateLogarithm(inputAValue),
+                Op.Abs => BigFloat.Abs(inputAValue),
+                Op.Neg => -inputAValue,
+                Op.ShiftRight => ValidateShift(inputAValue, snapshot.InputBString, false),
+                Op.ShiftLeft => ValidateShift(inputAValue, snapshot.InputBString, true),
+                _ => throw new NotImplementedException($"Operation {snapshot.Operation} not implemented")
+            };
+
+            calculation.InputA = inputAValue;
+            calculation.InputB = inputBValue;
+            calculation.ResultValue = resultValue;
+
+            calculation.ResultString = snapshot.ResultType switch
+            {
+                Base.Bin => resultValue.ToBinaryString(),
+                Base.Dec => resultValue.ToString(),
+                Base.Hex => resultValue.ToHexString(),
+                _ => resultValue.ToString()
+            };
+
+            calculation.HistoryEntry = FormatHistoryEntry(
+                snapshot.InputAString,
+                snapshot.InputBString,
+                calculation.ResultString,
+                snapshot.Operation,
+                snapshot.InputAType,
+                snapshot.InputBType,
+                snapshot.ResultType);
+        }
+        catch (OperationCanceledException)
+        {
+            calculation.HasError = true;
+            calculation.ErrorMessage = "Calculation canceled.";
+            calculation.ResultString = "Canceled";
+        }
+        catch (Exception ex)
+        {
+            calculation.HasError = true;
+            calculation.ErrorMessage = $"Calculation error: {ex.Message}";
+            calculation.ResultString = "Error";
+        }
+
+        return calculation;
+    }
+
+    private void ApplyCalculationResult(CalculationResult calculation)
+    {
+        hasCalculationError = calculation.HasError;
+        errorMessage = calculation.ErrorMessage ?? "";
+        inputAInvalidFormat = calculation.InputAInvalidFormat;
+        inputBInvalidFormat = calculation.InputBInvalidFormat;
+        inputA = calculation.InputA;
+        inputB = calculation.InputB;
+        result = calculation.ResultValue;
+        resultString = calculation.ResultString;
+
+        if (!calculation.HasError && !string.IsNullOrWhiteSpace(calculation.HistoryEntry))
+        {
+            resultHistories.Insert(0, calculation.HistoryEntry);
+
+            if (resultHistories.Count > 20)
+            {
+                resultHistories.RemoveAt(resultHistories.Count - 1);
+            }
+        }
+    }
+
+    private static bool NeedsBForOperation(Op operation)
+        => operation is Op.Add or Op.Sub or Op.Mul or Op.Div or Op.Pow or Op.Root or Op.ShiftLeft or Op.ShiftRight;
+
+    private void ApplyPrecisionControl(ref BigFloat inputAValue, ref BigFloat inputBValue, string mode, Op operation, bool needsB)
     {
         // Parse precision mode to get the numeric value if it's a fixed precision
-        int? fixedPrecision = GetFixedPrecisionValue(precisionMode);
+        int? fixedPrecision = GetFixedPrecisionValue(mode);
 
         if (fixedPrecision.HasValue)
         {
@@ -509,61 +666,61 @@
             int precisionBits = fixedPrecision.Value;
 
             // Apply precision based on operation type
-            if (_op is Op.Add or Op.Sub)
+            if (operation is Op.Add or Op.Sub)
             {
                 // For Add/Sub operations, we work with accuracy
-                if (inputA.Accuracy < precisionBits)
-                    inputA = BigFloat.ExtendPrecision(inputA, precisionBits - inputA.Accuracy);
-                if (NeedsB && inputB.Accuracy < precisionBits)
-                    inputB = BigFloat.ExtendPrecision(inputB, precisionBits - inputB.Accuracy);
+                if (inputAValue.Accuracy < precisionBits)
+                    inputAValue = BigFloat.ExtendPrecision(inputAValue, precisionBits - inputAValue.Accuracy);
+                if (needsB && inputBValue.Accuracy < precisionBits)
+                    inputBValue = BigFloat.ExtendPrecision(inputBValue, precisionBits - inputBValue.Accuracy);
             }
             else
             {
                 // For Mul/Div/Pow operations, we work with precision
-                if (inputA.Precision < precisionBits)
-                    inputA = BigFloat.SetPrecision(inputA, precisionBits);
-                if (NeedsB && inputB.Precision < precisionBits)
-                    inputB = BigFloat.SetPrecision(inputB, precisionBits);
+                if (inputAValue.Precision < precisionBits)
+                    inputAValue = BigFloat.SetPrecision(inputAValue, precisionBits);
+                if (needsB && inputBValue.Precision < precisionBits)
+                    inputBValue = BigFloat.SetPrecision(inputBValue, precisionBits);
             }
         }
-        else if (precisionMode == "Auto")
+        else if (mode == "Auto")
         {
             // Auto mode with special integer handling
-            bool aIsInteger = inputA.IsInteger;
-            bool bIsInteger = NeedsB ? inputB.IsInteger : false;
+            bool aIsInteger = inputAValue.IsInteger;
+            bool bIsInteger = needsB ? inputBValue.IsInteger : false;
 
-            if (NeedsB && aIsInteger && bIsInteger)
+            if (needsB && aIsInteger && bIsInteger)
             {
                 // Both are integers - keep as exact integers
                 // BigFloat should handle this naturally
             }
-            else if (NeedsB && (aIsInteger || bIsInteger))
+            else if (needsB && (aIsInteger || bIsInteger))
             {
                 // One is integer, one is not - match precision of non-integer
                 if (aIsInteger && !bIsInteger)
                 {
                     // A is integer, B is not - match A's precision to B's
-                    inputA = BigFloat.SetPrecision(inputA, inputB.Precision);
+                    inputAValue = BigFloat.SetPrecision(inputAValue, inputBValue.Precision);
                 }
                 else if (!aIsInteger && bIsInteger)
                 {
                     // B is integer, A is not - match B's precision to A's
-                    inputB = BigFloat.SetPrecision(inputB, inputA.Precision);
+                    inputBValue = BigFloat.SetPrecision(inputBValue, inputAValue.Precision);
                 }
             }
             // Otherwise let BigFloat use its default precision handling
         }
-        else if (precisionMode == "Full")
+        else if (mode == "Full")
         {
             // Match the longer input's precision
-            if (NeedsB)
+            if (needsB)
             {
-                int maxPrecision = Math.Max(inputA.Precision, inputB.Precision);
+                int maxPrecision = Math.Max(inputAValue.Precision, inputBValue.Precision);
 
-                if (inputA.Precision < maxPrecision)
-                    inputA = BigFloat.SetPrecision(inputA, maxPrecision);
-                if (inputB.Precision < maxPrecision)
-                    inputB = BigFloat.SetPrecision(inputB, maxPrecision);
+                if (inputAValue.Precision < maxPrecision)
+                    inputAValue = BigFloat.SetPrecision(inputAValue, maxPrecision);
+                if (inputBValue.Precision < maxPrecision)
+                    inputBValue = BigFloat.SetPrecision(inputBValue, maxPrecision);
             }
             // For single-input operations, keep the existing precision
         }
@@ -602,9 +759,9 @@
         return a / b;
     }
 
-    private BigFloat ValidatePower(BigFloat a, BigFloat b)
+    private BigFloat ValidatePower(BigFloat a, string bString)
     {
-        if (!int.TryParse(inputBString, out int exponent))
+        if (!int.TryParse(bString, out int exponent))
         {
             throw new ArgumentException("Power operation requires integer exponent");
         }
@@ -615,9 +772,9 @@
         return BigFloat.Pow(a, exponent);
     }
 
-    private BigFloat ValidateRoot(BigFloat a, BigFloat b)
+    private BigFloat ValidateRoot(BigFloat a, string bString)
     {
-        if (!int.TryParse(inputBString, out int root))
+        if (!int.TryParse(bString, out int root))
         {
             throw new ArgumentException("Root operation requires integer root value");
         }
@@ -650,9 +807,9 @@
         return (BigFloat)BigFloat.Log2(a);
     }
 
-    private BigFloat ValidateShift(BigFloat a, BigFloat b, bool leftShift)
+    private BigFloat ValidateShift(BigFloat a, string bString, bool leftShift)
     {
-        if (!int.TryParse(inputBString, out int shiftAmount))
+        if (!int.TryParse(bString, out int shiftAmount))
         {
             throw new ArgumentException("Shift operation requires integer shift amount");
         }
@@ -663,19 +820,19 @@
         return leftShift ? a << shiftAmount : a >> shiftAmount;
     }
 
-    private string FormatHistoryEntry()
+    private string FormatHistoryEntry(string inputAValue, string inputBValue, string resultValue, Op operation, Base inputATypeValue, Base inputBTypeValue, Base resultTypeValue)
     {
-        var aStr = FormatValueForHistory(inputAString, inputAType);
-        var resultStr = FormatValueForHistory(resultString, resultType);
+        var aStr = FormatValueForHistory(inputAValue, inputATypeValue);
+        var resultStr = FormatValueForHistory(resultValue, resultTypeValue);
 
-        if (NeedsB)
+        if (NeedsBForOperation(operation))
         {
-            var bStr = FormatValueForHistory(inputBString, inputBType);
-            return $"{aStr} {OpSymb[(int)_op]} {bStr} = {resultStr}";
+            var bStr = FormatValueForHistory(inputBValue, inputBTypeValue);
+            return $"{aStr} {OpSymb[(int)operation]} {bStr} = {resultStr}";
         }
         else
         {
-            return $"{OpSymb[(int)_op]}({aStr}) = {resultStr}";
+            return $"{OpSymb[(int)operation]}({aStr}) = {resultStr}";
         }
     }
 
@@ -752,6 +909,41 @@
     {
         resultHistories.Clear();
         StateHasChanged();
+    }
+
+    private sealed class CalculationSnapshot
+    {
+        public CalculationSnapshot(string inputAString, string inputBString, Base inputAType, Base inputBType, Base resultType, Op operation, string precisionMode)
+        {
+            InputAString = inputAString;
+            InputBString = inputBString;
+            InputAType = inputAType;
+            InputBType = inputBType;
+            ResultType = resultType;
+            Operation = operation;
+            PrecisionMode = precisionMode;
+        }
+
+        public string InputAString { get; }
+        public string InputBString { get; }
+        public Base InputAType { get; }
+        public Base InputBType { get; }
+        public Base ResultType { get; }
+        public Op Operation { get; }
+        public string PrecisionMode { get; }
+    }
+
+    private sealed class CalculationResult
+    {
+        public bool HasError { get; set; }
+        public string ErrorMessage { get; set; } = "";
+        public bool InputAInvalidFormat { get; set; }
+        public bool InputBInvalidFormat { get; set; }
+        public BigFloat InputA { get; set; }
+        public BigFloat InputB { get; set; }
+        public BigFloat ResultValue { get; set; }
+        public string ResultString { get; set; } = "";
+        public string? HistoryEntry { get; set; }
     }
 
     private void ClearAll()
