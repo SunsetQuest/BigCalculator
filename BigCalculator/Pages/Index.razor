@@ -440,7 +440,15 @@
 
         using var countdownCts = new CancellationTokenSource();
         var countdownTask = RunCountdownAsync(countdownCts.Token);
-        var calculationTask = Task.Run(() => CalculateCore(snapshot, _calculationCts.Token), _calculationCts.Token);
+        Task<CalculationResult> calculationTask;
+        try
+        {
+            calculationTask = Task.Run(() => CalculateCore(snapshot, _calculationCts.Token), _calculationCts.Token);
+        }
+        catch (PlatformNotSupportedException)
+        {
+            calculationTask = Task.FromResult(CalculateCore(snapshot, _calculationCts.Token));
+        }
         _ = calculationTask.ContinueWith(task => _ = task.Exception, TaskContinuationOptions.OnlyOnFaulted);
 
         try
@@ -528,8 +536,8 @@
 
         try
         {
-            BigFloat inputAValue = 0;
-            BigFloat inputBValue = 0;
+            var inputAValue = 0;
+            var inputBValue = 0;
 
             token.ThrowIfCancellationRequested();
 
