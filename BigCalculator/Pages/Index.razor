@@ -440,11 +440,7 @@
 
         using var countdownCts = new CancellationTokenSource();
         var countdownTask = RunCountdownAsync(countdownCts.Token);
-        var calculationTask = Task.Factory.StartNew(
-            () => CalculateCore(snapshot, _calculationCts.Token),
-            _calculationCts.Token,
-            TaskCreationOptions.LongRunning,
-            TaskScheduler.Default);
+        var calculationTask = Task.Run(() => CalculateCore(snapshot, _calculationCts.Token), _calculationCts.Token);
         _ = calculationTask.ContinueWith(task => _ = task.Exception, TaskContinuationOptions.OnlyOnFaulted);
 
         try
