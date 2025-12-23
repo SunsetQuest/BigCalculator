@@ -855,7 +855,7 @@
     private string GetInputHelperText(BigFloat value, Base baseType)
     {
         if (value == 0) return $"{baseType} format";
-        return $"Bits: {value.Size} | Precision: {value.Precision} | Accuracy: {value.Accuracy} | Scale: {value.Scale} | BinExp: {value.BinaryExponent}{(value.IsInteger ? "| IsInteger" : "")}{(value.FitsInADouble() ? "| FitsInADouble" : "")}{(value.IsOneBitFollowedByZeroBits ? "| IsOneBitFollowedByZeroBits" : "")}";
+        return $"Bits: {value.Size} | Precision: {value.Precision} | Accuracy: {value.Accuracy} | Scale: {value.Scale} | BinExp: {value.BinaryExponent}{(value.IsInteger ? "| IsInteger" : "")}{(value.FitsInADouble ? "| FitsInADouble" : "")}{(value.IsOneBitFollowedByZeroBits ? "| IsOneBitFollowedByZeroBits" : "")}";
     }
 
     private string GetResultHelperText()
@@ -863,7 +863,7 @@
         if (result == 0 || hasCalculationError) return $"{resultType} format";
 
         string baseInfo = $"Bits: {result.Size} | Precision: {result.Precision} | Accuracy: {result.Accuracy} | Scale: {result.Scale} | BinExp: {result.BinaryExponent}";
-        string flags = $"{(result.IsInteger ? "| IsInteger" : "")}{(result.FitsInADouble() ? "| FitsInADouble" : "")}{(result.IsOneBitFollowedByZeroBits ? "| IsOneBitFollowedByZeroBits" : "")}";
+        string flags = $"{(result.IsInteger ? "| IsInteger" : "")}{(result.FitsInADouble ? "| FitsInADouble" : "")}{(result.IsOneBitFollowedByZeroBits ? "| IsOneBitFollowedByZeroBits" : "")}";
         string modeInfo = $" | Mode: {precisionMode}";
 
         return baseInfo + flags + modeInfo;
