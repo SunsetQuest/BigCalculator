@@ -581,11 +581,17 @@
                 Op.Pow => ValidatePower(inputAValue, snapshot.InputBString),
                 Op.Root => ValidateRoot(inputAValue, snapshot.InputBString),
                 Op.Sqrt => ValidateSquareRoot(inputAValue),
-                Op.Log2 => ValidateLogarithm(inputAValue),
+                Op.Log2 => ValidateLog2(inputAValue),
+                Op.Log10 => ValidateLog10(inputAValue),
+                Op.Ln => ValidateNaturalLog(inputAValue),
+                Op.Exp => BigFloat.Exp(inputAValue),
                 Op.Abs => BigFloat.Abs(inputAValue),
                 Op.Neg => -inputAValue,
                 Op.ShiftRight => ValidateShift(inputAValue, snapshot.InputBString, false),
                 Op.ShiftLeft => ValidateShift(inputAValue, snapshot.InputBString, true),
+                Op.Sin => BigFloat.Sin(inputAValue),
+                Op.Cos => BigFloat.Cos(inputAValue),
+                Op.Tan => BigFloat.Tan(inputAValue),
                 _ => throw new NotImplementedException($"Operation {snapshot.Operation} not implemented")
             };
 
@@ -794,13 +800,31 @@
         return BigFloat.Sqrt(a);
     }
 
-    private BigFloat ValidateLogarithm(BigFloat a)
+    private BigFloat ValidateLog2(BigFloat a)
     {
         if (a <= 0)
         {
             throw new ArgumentException("Logarithm undefined for non-positive numbers");
         }
         return (BigFloat)BigFloat.Log2(a);
+    }
+
+    private BigFloat ValidateLog10(BigFloat a)
+    {
+        if (a <= 0)
+        {
+            throw new ArgumentException("Logarithm undefined for non-positive numbers");
+        }
+        return (BigFloat)BigFloat.Log10(a);
+    }
+
+    private BigFloat ValidateNaturalLog(BigFloat a)
+    {
+        if (a <= 0)
+        {
+            throw new ArgumentException("Logarithm undefined for non-positive numbers");
+        }
+        return (BigFloat)BigFloat.Log(a);
     }
 
     private BigFloat ValidateShift(BigFloat a, string bString, bool leftShift)
