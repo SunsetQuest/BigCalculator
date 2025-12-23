@@ -11,13 +11,13 @@
 <MudSnackbarProvider />
 
 <MudLayout>
-    <MudAppBar>
+    <MudAppBar Dense="true">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
 
         <!-- Beautiful Title Section -->
         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="ml-2">
             <MudIcon Icon="@Icons.Material.Filled.Calculate" Color="Color.Inherit" Size="Size.Medium" />
-            <MudText Typo="Typo.h6" Color="Color.Inherit" Class="fw-bold">
+            <MudText Typo="Typo.subtitle1" Color="Color.Inherit" Class="fw-bold">
                 BigCalculator.org
             </MudText>
             <MudChip T="string" Size="Size.Small" Color="Color.Secondary" Variant="Variant.Outlined" Class="ml-2">
@@ -92,6 +92,7 @@
     {
         MyCustomTheme.PaletteDark.Primary = "#b78c38";
         MyCustomTheme.PaletteDark.Secondary = Colors.Green.Accent4;
-        MyCustomTheme.PaletteDark.AppbarBackground = Colors.Red.Default;
+        MyCustomTheme.PaletteDark.AppbarBackground = "#d64a4a";
+        MyCustomTheme.PaletteLight.AppbarBackground = "#d64a4a";
     }
 }
