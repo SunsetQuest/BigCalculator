@@ -1,6 +1,7 @@
 {
-  "name": "BigCalculator",
+  "name": "BigCalculator - Arbitrary Precision Calculator",
   "short_name": "BigCalculator",
+  "description": "Free arbitrary-precision calculator for math operations on numbers of any size, with support for decimal, binary, and hexadecimal formats.",
   "id": "./",
   "start_url": "./",
   "display": "standalone",

@@ -4,8 +4,25 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>BigCalculator</title>
+    <title>BigCalculator - Free Arbitrary Precision Calculator Online</title>
+    <meta name="description" content="Free online arbitrary-precision calculator. Perform math operations on numbers of any size with adjustable precision up to millions of bits. Supports decimal, binary, and hex." />
     <base href="/" />
+    <link rel="canonical" href="https://bigcalculator.org/" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="BigCalculator - Arbitrary Precision Calculator" />
+    <meta property="og:description" content="Free online calculator for arbitrary-precision math. Add, subtract, multiply, divide, and more with numbers of virtually any size." />
+    <meta property="og:url" content="https://bigcalculator.org/" />
+    <meta property="og:site_name" content="BigCalculator" />
+    <meta property="og:image" content="https://bigcalculator.org/icon-512.png" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="BigCalculator - Arbitrary Precision Calculator" />
+    <meta name="twitter:description" content="Free online calculator for arbitrary-precision math with adjustable precision up to millions of bits." />
+    <meta name="twitter:image" content="https://bigcalculator.org/icon-512.png" />
+
     <link rel="stylesheet" href="lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="css/app.css" />
     <link rel="icon" type="image/png" href="favicon.png" />
@@ -16,10 +33,68 @@
     <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet" />
     <!-- Important: Increment the version parameter whenever you update MudBlazor to prevent caching issues -->
     <link href="_content/MudBlazor/MudBlazor.min.css?v=1" rel="stylesheet" />
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "BigCalculator",
+        "url": "https://bigcalculator.org",
+        "description": "Free online arbitrary-precision calculator for math operations on numbers of any size.",
+        "applicationCategory": "UtilityApplication",
+        "operatingSystem": "Any (Web Browser)",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+        },
+        "author": {
+            "@type": "Person",
+            "name": "Ryan Scott White",
+            "url": "https://ryanwhite.org"
+        },
+        "isRelatedTo": {
+            "@type": "SoftwareSourceCode",
+            "name": "BigFloat Library",
+            "url": "https://bigfloat.org",
+            "codeRepository": "https://github.com/SunsetQuest/BigFloat"
+        }
+    }
+    </script>
 </head>
 
 <body>
     <div id="app">
+        <!-- Static fallback content for SEO crawlers - replaced by Blazor on load -->
+        <div style="max-width: 800px; margin: 0 auto; padding: 2rem; font-family: 'Roboto', sans-serif;">
+            <h1>BigCalculator - Arbitrary Precision Calculator</h1>
+            <p>
+                BigCalculator.org is a free online arbitrary-precision calculator that handles
+                numbers of virtually any size. Perform addition, subtraction, multiplication,
+                division, powers, roots, logarithms, and trigonometric functions with precision
+                up to millions of bits.
+            </p>
+            <h2>Features</h2>
+            <ul>
+                <li>Arbitrary precision arithmetic - no limits on number size</li>
+                <li>Support for decimal, binary, and hexadecimal formats</li>
+                <li>Operations: +, -, x, /, powers, roots, sqrt, log2, log10, ln, exp, sin, cos, tan</li>
+                <li>Adjustable precision from 16 bits to 1 million bits</li>
+                <li>Calculation history with result transfer</li>
+                <li>Works offline as a Progressive Web App</li>
+            </ul>
+            <h2>Powered by BigFloat</h2>
+            <p>
+                Built on the <a href="https://bigfloat.org">BigFloat</a> C# library for
+                arbitrary-precision floating-point arithmetic.
+                <a href="https://bigfloat.org/getting-started.html">Learn more about BigFloat</a>.
+            </p>
+            <p><a href="/about">About BigCalculator</a></p>
+            <noscript>
+                <p>This calculator requires JavaScript and WebAssembly to run. Please enable JavaScript in your browser.</p>
+            </noscript>
+        </div>
         <svg class="loading-progress">
             <circle r="40%" cx="50%" cy="50%" />
             <circle r="40%" cx="50%" cy="50%" />
